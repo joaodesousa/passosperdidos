@@ -46,10 +46,7 @@ jobs:
             sudo git config --global --add safe.directory /var/www/passosperdidos
 
             echo "⬇️ Pulling latest code..."
-            sudo git pull origin main  
-
-            echo "🐳 Installing Docker Compose (if missing)..."
-            sudo apt update && sudo apt install -y docker-compose-plugin
+            sudo git pull origin main 
 
             echo "🛑 Stopping running containers..."
             sudo docker-compose down  
