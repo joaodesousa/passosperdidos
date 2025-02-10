@@ -42,10 +42,11 @@ jobs:
             cd /var/www/passosperdidos/api 
 
             echo "🔧 Fixing Git safe directory issue..."
-            sudo git config --global --add safe.directory /var/www/passosperdidos/api
+            sudo chown -R $USER:$USER /var/www/passosperdidos  # Fix ownership
+            sudo git config --global --add safe.directory /var/www/passosperdidos
 
             echo "⬇️ Pulling latest code..."
-            git pull origin main  
+            sudo git pull origin main  
 
             echo "🐳 Installing Docker Compose (if missing)..."
             sudo apt update && sudo apt install -y docker-compose-plugin
