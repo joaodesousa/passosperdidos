@@ -3,21 +3,41 @@ name: Deploy DRF API to VPS
 on:
   push:
     branches:
-      - main
+      - main  
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    
     steps:
-      - name: SSH into VPS and deploy
-        uses: appleboy/ssh-action@v0.1.7
+      # Checkout the code
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        
+      # Set up SSH key for deployment
+      - name: Setup SSH key
+        uses: webfactory/ssh-agent@v0.5.3
         with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH }}
-          script: |
-            cd /var/www/passosperdidos/api
-            git pull origin main
-            docker compose down
-            docker compose up -d --build
+          ssh-private-key: ${{ secrets.VPS_SSH }}  #
+
+     
+      - name: Test SSH connection
+        run: |
+          ssh -v -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "echo 'SSH Connected Successfully'"
+
+      
+      - name: Deploy to VPS
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            cd /var/www/passosperdidos/api 
+            git pull origin main  
+            docker compose down  
+            docker compose up -d --build  
+          EOF
+
+      # Optional: Clean up Docker images (if needed)
+      - name: Clean up old Docker images
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            docker system prune -f  # Remove unused Docker images and containers
+          EOF
