@@ -18,24 +18,48 @@ jobs:
       - name: Setup SSH key
         uses: webfactory/ssh-agent@v0.5.3
         with:
-          ssh-private-key: ${{ secrets.VPS_SSH }}  #
+          ssh-private-key: ${{ secrets.VPS_SSH }}
 
-     
-      - name: Test SSH connection
+      # Fix SSH permissions
+      - name: Adjust SSH permissions
         run: |
-          ssh -v -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "echo 'SSH Connected Successfully'"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
 
-      
+      # Test SSH connection
+      - name: Test SSH connection
+        run: ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "echo 'SSH Connected Successfully'"
+
+      # Deploy to VPS
       - name: Deploy to VPS
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            set -e  # Exit immediately if a command fails
+
+            echo "🔄 Changing directory..."
             cd /var/www/passosperdidos/api 
+
+            echo "🔧 Fixing Git safe directory issue..."
+            git config --global --add safe.directory /var/www/passosperdidos/api
+
+            echo "⬇️ Pulling latest code..."
             git pull origin main  
-            docker compose down  
-            docker compose up -d --build  
+
+            echo "🐳 Installing Docker Compose (if missing)..."
+            sudo apt update && sudo apt install -y docker-compose-plugin
+
+            echo "🛑 Stopping running containers..."
+            docker-compose down  
+
+            echo "🚀 Building and restarting containers..."
+            docker-compose up -d --build  
+
+            echo "✅ Deployment complete!"
           EOF
 
-      # Optional: Clean up Docker images (if needed)
+      # Optional: Clean up Docker images
       - name: Clean up old Docker images
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
