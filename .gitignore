@@ -1,5 +1,5 @@
-# Created by https://www.toptal.com/developers/gitignore/api/django,nextjs
-# Edit at https://www.toptal.com/developers/gitignore?templates=django,nextjs
+# Created by https://www.toptal.com/developers/gitignore/api/django,nextjs,venv,dotenv
+# Edit at https://www.toptal.com/developers/gitignore?templates=django,nextjs,venv,dotenv
 
 ### Django ###
 *.log
@@ -171,6 +171,8 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
+### dotenv ###
+
 ### NextJS ###
 # dependencies
 /node_modules
@@ -207,4 +209,16 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# End of https://www.toptal.com/developers/gitignore/api/django,nextjs
+### venv ###
+# Virtualenv
+# http://iamzed.com/2009/05/07/a-primer-on-virtualenv/
+[Bb]in
+[Ii]nclude
+[Ll]ib
+[Ll]ib64
+[Ll]ocal
+[Ss]cripts
+pyvenv.cfg
+pip-selfcheck.json
+
+# End of https://www.toptal.com/developers/gitignore/api/django,nextjs,venv,dotenv
