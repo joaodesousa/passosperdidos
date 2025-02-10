@@ -1,7 +1,7 @@
 import requests
 from xml.etree import ElementTree
 from django.core.management.base import BaseCommand
-from backend.models import ProjetoLei  # Replace with your actual model import path
+from backend.models import ProjetoLei, Phase  # Replace with your actual model import path
 
 class Command(BaseCommand):
     help = 'Fetches proposals from an XML URL and stores them in the database'
@@ -48,7 +48,6 @@ class Command(BaseCommand):
                 'type': proposal.find('.//IniDescTipo').text if proposal.find('.//IniDescTipo') is not None else 'No type',
                 'legislature': proposal.find('.//IniLeg').text if proposal.find('.//IniLeg') is not None else 'Unknown',
                 'date': proposal.find('.//IniEventos/Pt_gov_ar_objectos_iniciativas_EventosOut/DataFase').text if proposal.find('.//IniEventos/Pt_gov_ar_objectos_iniciativas_EventosOut/DataFase') is not None else 'No date',
-                'phase': proposal.find('.//IniEventos/Pt_gov_ar_objectos_iniciativas_EventosOut/Fase').text if proposal.find('.//IniEventos/Pt_gov_ar_objectos_iniciativas_EventosOut/Fase') is not None else 'No phase',
                 'link': proposal.find('.//IniLinkTexto').text if proposal.find('.//IniLinkTexto') is not None else 'No link',
                 'description': proposal.find('.//IniDescricao').text if proposal.find('.//IniDescricao') is not None else 'No description available.',
                 'external_id': proposal.find('.//IniId').text if proposal.find('.//IniId') is not None else 'No ID',
@@ -71,6 +70,14 @@ class Command(BaseCommand):
                     sigla = autor_outros.find('.//sigla').text if autor_outros.find('.//sigla') is not None else 'Unknown'
                     author = f"{nome} ({sigla})"
 
+            # Handle phases
+            phases = []
+            for event in proposal.findall('.//IniEventos/Pt_gov_ar_objectos_iniciativas_EventosOut'):
+                fase = event.find('Fase').text if event.find('Fase') is not None else 'No phase'
+                data_fase = event.find('DataFase').text if event.find('DataFase') is not None else None
+                phase_instance = Phase.objects.create(name=fase, date=data_fase)
+                phases.append(phase_instance)
+
             # Add the extracted author info to the data dictionary
             data['author'] = author
 
@@ -82,8 +89,10 @@ class Command(BaseCommand):
                 for field, value in data.items():
                     setattr(existing_proposal, field, value)
                 existing_proposal.save()
+                existing_proposal.phases.set(phases)  # Update phases
                 self.stdout.write(self.style.SUCCESS(f"Updated proposal: {data['title']}"))
             else:
                 # Create a new proposal
-                ProjetoLei.objects.create(**data)
+                new_proposal = ProjetoLei.objects.create(**data)
+                new_proposal.phases.set(phases)  # Associate phases
                 self.stdout.write(self.style.SUCCESS(f"Created proposal: {data['title']}"))

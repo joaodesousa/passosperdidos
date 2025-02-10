@@ -12,6 +12,11 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 import os
+from dotenv import load_dotenv
+from datetime import timedelta
+
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,13 +26,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-b3nnytvq@so$vh!hlltxcxa4(83$gyj)!w2c4+pi@$ds%y8*zr'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = []
-CORS_ALLOWED_ORIGINS = ["http://localhost:3000"]
+CORS_ALLOWED_ORIGINS = ["http://localhost:3000", "https://passosperdidos.pt", "https://www.passosperdidos.pt"]
 
 
 # Application definition
@@ -36,6 +41,7 @@ INSTALLED_APPS = [
     'backend',
     'django_filters',
     'rest_framework',
+    'rest_framework_simplejwt',
     'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -76,21 +82,19 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'api.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
-        'USER': 'postgres',
-        'PASSWORD': 'vgq7vnr7eda7WVD-enw',
-        'HOST': 'db.iesxtsmgidsknavtkevl.supabase.co',
+        'NAME': os.getenv('SUPABASE_DB'),
+        'USER': os.getenv('SUPABASE_USER'),
+        'PASSWORD': os.getenv('SUPABASE_PASSWORD'),
+        'HOST': os.getenv('SUPABASE_URL'),
         'PORT': '5432',
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -117,9 +121,21 @@ AUTH_PASSWORD_VALIDATORS = [
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'backend.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,  # Adjust as needed
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticatedOrReadOnly',  # Allows GET for everyone
-    ]
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+}
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "SIGNING_KEY": "your_secret_key",  # Use env variables in production
+    "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
 API_SECRET_KEY = os.getenv('API_SECRET_KEY')

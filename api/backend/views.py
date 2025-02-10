@@ -1,72 +1,86 @@
 from rest_framework import viewsets, status
-from .models import ProjetoLei
+from .models import ProjetoLei, Phase
 from .serializers import ProjetoLeiSerializer
 from .pagination import CustomPagination
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
-from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly
-from django.conf import settings
+from rest_framework.viewsets import ReadOnlyModelViewSet
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.filters import SearchFilter
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import Subquery, OuterRef
+from datetime import datetime
 
-
-class CustomAPIKeyAuthentication(BaseAuthentication):
-    def authenticate(self, request):
-        api_key = request.headers.get("X-API-KEY")
-        if api_key != settings.API_SECRET_KEY:
-            raise AuthenticationFailed("Invalid API Key")
-        return None  # Allow the request to continue
 
 class TypeListView(APIView):
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
     def get(self, request):
         types = ProjetoLei.objects.values_list('type', flat=True).distinct()
         return Response(list(types))
-    
+
+
 class PhaseListView(APIView):
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
     def get(self, request):
-        types = ProjetoLei.objects.values_list('phase', flat=True).distinct()
+        types = Phase.objects.values_list('name', flat=True).distinct().order_by('name')
         return Response(list(types))
 
-from datetime import datetime
 
 class ProjetoLeiViewSet(ReadOnlyModelViewSet):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
     queryset = ProjetoLei.objects.all().order_by('-date')
     serializer_class = ProjetoLeiSerializer
-    authentication_classes = [CustomAPIKeyAuthentication]  # Use custom auth
-    permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [SearchFilter, DjangoFilterBackend]
     search_fields = ['title']
 
     def get_queryset(self):
         queryset = super().get_queryset()
         type_param = self.request.query_params.get('type', None)
-        phase_param = self.request.query_params.get('phase', None)
+        if type_param:
+            type_param = type_param.split(',')
+            queryset = queryset.filter(type__in=type_param)
+
         start_date_param = self.request.query_params.get('start_date', None)
         end_date_param = self.request.query_params.get('end_date', None)
 
-        if type_param:
-            queryset = queryset.filter(type=type_param)
-        
+        # Handle phase filter
+        phase_param = self.request.query_params.get('phase', None)
         if phase_param:
-            queryset = queryset.filter(phase=phase_param)
-        
+            phase_ids = Phase.objects.filter(name=phase_param).values_list('id', flat=True)
+            if phase_ids:
+                last_phase_subquery = ProjetoLei.objects.annotate(
+                    last_phase_id=Subquery(
+                        Phase.objects.filter(projetos_lei=OuterRef('id'))
+                        .order_by('-id')
+                        .values('id')[:1]
+                    )
+                ).filter(last_phase_id__in=phase_ids)
+
+                queryset = queryset.filter(id__in=last_phase_subquery.values('id'))
+            else:
+                queryset = queryset.none()
+
         # Handle start_date filter
         if start_date_param:
             try:
-                start_date = datetime.strptime(start_date_param, '%Y-%m-%d')  # Adjust date format if needed
+                start_date = datetime.strptime(start_date_param, '%Y-%m-%d')
                 queryset = queryset.filter(date__gte=start_date)
             except ValueError:
-                pass  # Handle invalid date format if needed
-        
+                pass
+
         # Handle end_date filter
         if end_date_param:
             try:
-                end_date = datetime.strptime(end_date_param, '%Y-%m-%d')  # Adjust date format if needed
+                end_date = datetime.strptime(end_date_param, '%Y-%m-%d')
                 queryset = queryset.filter(date__lte=end_date)
             except ValueError:
-                pass  # Handle invalid date format if needed
+                pass
 
         return queryset
