@@ -49,10 +49,10 @@ jobs:
             sudo git pull origin main 
 
             echo "🛑 Stopping running containers..."
-            sudo docker compose down  
+            sudo docker-compose down  
 
             echo "🚀 Building and restarting containers..."
-            sudo docker compose up -d --build  
+            sudo docker-compose up -d --build  
 
             echo "✅ Deployment complete!"
           EOF
