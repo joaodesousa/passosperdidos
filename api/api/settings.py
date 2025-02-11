@@ -82,6 +82,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'api.wsgi.application'
 
+
+STATIC_URL = "/static/"
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
