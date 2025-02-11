@@ -271,8 +271,8 @@ export default function Home() {
     const fetchInitialData = async () => {
       try {
         const [typesResponse, phasesResponse] = await Promise.all([
-          fetch(`${API_BASE_URL}/types/`),
-          fetch(`${API_BASE_URL}/phases/`),
+          fetch(`https://legis.passosperdidos.pt/types/`),
+          fetch(`https://legis.passosperdidos.pt/phases/`),
         ])
         
         const typesData = await typesResponse.json()
