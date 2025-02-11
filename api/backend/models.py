@@ -8,7 +8,7 @@ class Phase(models.Model):
 
 class ProjetoLei(models.Model):
     title = models.TextField(db_index=True)
-    type = models.CharField(db_index=True)
+    type = models.CharField(max_length=255, db_index=True)  # Add max_length
     legislature = models.CharField(max_length=1000)
     date = models.DateField(null=True)
     link = models.URLField()

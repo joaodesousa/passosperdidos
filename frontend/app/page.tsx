@@ -38,16 +38,10 @@ interface FilterState {
 }
 
 // API functions
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000'
-
 async function getAuthToken() {
-  const response = await fetch(`${API_BASE_URL}/api/token/`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username: process.env.NEXT_PUBLIC_API_USERNAME, password: process.env.NEXT_PUBLIC_API_PASSWORD }),
-  })
-  const data = await response.json()
-  return data.access
+  const response = await fetch('/api/token', { method: 'POST' });
+  const data = await response.json();
+  return data.access;
 }
 
 async function fetchItems(params: {
