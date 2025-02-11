@@ -12,6 +12,15 @@ services:
     volumes:
       - .:/app
     environment:
-      DATABASE_URL: ${DATABASE_URL}
-      SUPABASE_API_KEY: ${SUPABASE_API_KEY}
-      SUPABASE_HOST: ${SUPABASE_HOST}
+      DATABASE_URL: ${DATABASE_URL}  # This should contain the correct connection string for PostgreSQL
+    depends_on:
+      - db
+
+  # PostgreSQL container is no longer needed since it's running externally.
+  db:
+    external: true
+    name: existing_postgres_container_name  # Replace with your actual PostgreSQL container name
+
+networks:
+  app_network:
+    external: true  # Use existing network if needed (if both containers are on the same network)
