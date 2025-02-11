@@ -63,3 +63,16 @@ jobs:
           ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
             docker system prune -f  # Remove unused Docker images and containers
           EOF
+
+      # Add Supabase environment variables to the VPS container (optional)
+      - name: Add Supabase environment variables
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            echo "Setting Supabase environment variables..."
+            export DATABASE_URL=${{ secrets.SUPABASE_DATABASE_URL }}
+            export SUPABASE_API_KEY=${{ secrets.SUPABASE_API_KEY }}
+            export SUPABASE_HOST=${{ secrets.SUPABASE_HOST }}
+
+            echo "🛠️ Rebuilding the container with Supabase env vars..."
+            cd /var/www/passosperdidos/api && docker-compose up -d --build
+          EOF

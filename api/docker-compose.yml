@@ -5,9 +5,15 @@ services:
     build: .
     container_name: django_api
     restart: always
-    env_file: .env
+    env_file: .env  # Ensure .env is in your project root
     command: gunicorn api.wsgi:application --bind 0.0.0.0:8000
     ports:
       - "8000:8000"
     volumes:
       - .:/app
+    environment:
+      # These are optional if you need to override specific vars for Docker or make sure they are accessible in the container
+      DATABASE_URL: ${DATABASE_URL}
+      SUPABASE_API_KEY: ${SUPABASE_API_KEY}
+      SUPABASE_HOST: ${SUPABASE_HOST}
+
