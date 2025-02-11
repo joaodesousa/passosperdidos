@@ -339,6 +339,18 @@ export default function Home() {
     setCurrentPage(1)
   }
 
+  const clearAllFilters = useCallback(() => {
+    setFilters({
+      types: [],
+      phases: [],
+      authors: [],
+      dateRange: undefined
+    });
+    setCurrentPage(1);
+    setSearchTerm("");  // Add this if you want to clear the search term too
+  }, []);
+
+
   return (
     <main className="container mx-auto px-4 py-6">
       <div className="flex gap-4">
@@ -353,10 +365,11 @@ export default function Home() {
             allAuthors={allAuthors}
             selectedAuthors={filters.authors}
             onPhasesChange={(phases) => handleFilterChange(filters.types, phases, filters.authors, filters.dateRange)}
-            onAuthorsChange={(authors: string[]) => handleFilterChange(filters.types, filters.phases, authors, filters.dateRange)}
+            onAuthorsChange={(authors) => handleFilterChange(filters.types, filters.phases, authors, filters.dateRange)}
             onDateChange={(dateRange) => handleFilterChange(filters.types, filters.phases, filters.authors, dateRange)}
             onClearDate={() => handleFilterChange(filters.types, filters.phases, filters.authors, undefined)}
             date={filters.dateRange}
+            onClearAllFilters={clearAllFilters}
           />
         </div>
 
@@ -392,11 +405,11 @@ export default function Home() {
                     onPhasesChange={(phases) => handleFilterChange(filters.types, phases, filters.authors, filters.dateRange)}
                     onClearDate={() => handleFilterChange(filters.types, filters.phases, filters.authors, undefined)}
                     date={filters.dateRange}
+                    onClearAllFilters={clearAllFilters}
                   />
                 </div>
               </SheetContent>
             </Sheet>
-
             <DateRangeSelector
               date={filters.dateRange}
               onDateChange={(dateRange) => handleFilterChange(filters.types, filters.phases, filters.authors, dateRange)}

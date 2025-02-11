@@ -22,6 +22,7 @@ interface SidebarProps {
   onDateChange: (dateRange: DateRange | undefined) => void;
   onClearDate: () => void;
   date: DateRange | undefined;
+  onClearAllFilters: () => void;
 }
 
 export function Sidebar({
@@ -38,12 +39,45 @@ export function Sidebar({
   allAuthors,
   selectedAuthors,
   onAuthorsChange,
+  onClearAllFilters,
 }: SidebarProps) {
   const handleClearFilters = () => {
-    onTypesChange([]); // Clear selected types
-    onPhasesChange([]); // Clear selected phases
-    onClearDate(); // Clear date range
+    onClearAllFilters();
   };
+
+  const FilterSection = ({
+    title,
+    options,
+    selected,
+    onChange,
+    showClear = false,
+    onClear,
+  }: {
+    title: string
+    options: string[]
+    selected: string[]
+    onChange: (selected: string[]) => void
+    showClear?: boolean
+    onClear?: () => void
+  }) => (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+          {title}
+        </h3>
+        {showClear && selected.length > 0 && (
+          <Button
+            variant="ghost"
+            onClick={onClear}
+            className="h-8 px-2 text-sm dark:border dark:border-white dark:border-opacity-20"
+          >
+            Limpar
+          </Button>
+        )}
+      </div>
+      {/* ... existing code ... */}
+    </div>
+  )
 
   return (
     <div className="w-full md:w-64 dark:bg-[#09090B] md:dark:border md:dark:border-blue md:dark:border-opacity-20 p-4 rounded-lg shadow">
