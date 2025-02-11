@@ -31,7 +31,7 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["4.180.13.143", "localhost", "'legis.passosperdidos.pt"]
+ALLOWED_HOSTS = ["4.180.13.143", "localhost", "legis.passosperdidos.pt"]
 CORS_ALLOWED_ORIGINS = ["http://localhost:3000", "https://passosperdidos.pt", "https://www.passosperdidos.pt"]
 
 
