@@ -14,7 +14,13 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Subquery, OuterRef
 from datetime import datetime
 
+class AuthorListView(APIView):
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
+    def get(self, request):
+        types = ProjetoLei.objects.values_list('author', flat=True).distinct()
+        return Response(list(types))
+    
 class TypeListView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
 
@@ -49,6 +55,11 @@ class ProjetoLeiViewSet(ReadOnlyModelViewSet):
 
         start_date_param = self.request.query_params.get('start_date', None)
         end_date_param = self.request.query_params.get('end_date', None)
+
+        # Handle author filter
+        author_param = self.request.query_params.get('author', None)
+        if author_param:
+            queryset = queryset.filter(author__exact=author_param)
 
         # Handle phase filter
         phase_param = self.request.query_params.get('phase', None)

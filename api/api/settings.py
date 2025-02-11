@@ -15,6 +15,7 @@ import os
 from dotenv import load_dotenv
 from datetime import timedelta
 import dj_database_url
+import socket
 
 
 load_dotenv()
@@ -90,13 +91,16 @@ STATIC_ROOT = os.path.join(BASE_DIR, "static")
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 
+# Determine if running locally or in a deployed environment
+HOST = 'postgres' if socket.gethostname() != 'MacBookPro.lan' else '4.180.13.143'
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': os.getenv('POSTGRES_DB'),
         'USER': os.getenv('POSTGRES_USER'),
         'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
-        'HOST': 'postgres',
+        'HOST': HOST,  # Use 'postgres' in production, '4.180.13.143' locally
         'PORT': '5432',
     }
 }

@@ -13,6 +13,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { PaginationControls } from "./components/pagination"
 import { Sidebar } from "./components/sidebar"
 import { cn } from "@/lib/utils"
+import { Badge } from "@/components/ui/badge"
 import type { DateRange } from "react-day-picker"
 
 // Types
@@ -29,11 +30,13 @@ interface Item {
   link: string
   phases: Phase[]
   date: number
+  author: string
 }
 
 interface FilterState {
   types: string[]
   phases: string[]
+  authors: string[]
   dateRange: DateRange | undefined
 }
 
@@ -49,6 +52,7 @@ async function fetchItems(params: {
   search: string
   types: string[]
   phases: string[]
+  authors: string[]
   dateRange: DateRange | undefined
 }) {
   const token = await getAuthToken()
@@ -65,6 +69,10 @@ async function fetchItems(params: {
   const filteredPhases = params.phases.filter(phase => phase !== "Todas")
   if (filteredPhases.length > 0) {
     queryParams.append('phase', filteredPhases.join(','))
+  }
+
+  if (params.authors.length > 0) {
+    queryParams.append('author', params.authors.join(','))
   }
 
   if (params.dateRange?.from) {
@@ -163,6 +171,24 @@ const ItemCard = ({ item }: { item: Item }) => {
             </time>
           </div>
         </div>
+        <Badge 
+          variant="secondary" 
+          className={cn(
+            "border-0 w-fit", 
+            item.author === "PS" ? "bg-red-100 text-red-800" : 
+            item.author === "PSD" ? "bg-orange-100 text-orange-500" : 
+            item.author === "CH" ? "bg-blue-100 text-blue-800" : 
+            item.author === "BE" ? "bg-red-300 text-white" : 
+            item.author === "L" ? "bg-green-100 text-green-800" : 
+            item.author === "PAN" ? "bg-green-100 text-blue-600" : 
+            item.author === "PCP" ? "bg-red-300 text-red-900" : 
+            item.author === "IL" ? "bg-cyan-500 text-white" : 
+            item.author === "CDS-PP" ? "bg-blue-500 text-white" : 
+            "bg-[#2a2b2e] text-white"
+          )}
+        >
+            {item.author}
+        </Badge>
         <h3 className="text-lg font-semibold leading-tight tracking-tight break-words hyphens-auto">
           {item.title}
         </h3>
@@ -239,12 +265,14 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true)
   const [allTypes, setAllTypes] = useState<string[]>([])
   const [allPhases, setAllPhases] = useState<string[]>(["Todas"])
+  const [allAuthors, setAllAuthors] = useState<string[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [searchTerm, setSearchTerm] = useState("")
   const [filters, setFilters] = useState<FilterState>({
     types: [],
     phases: [],
+    authors: [],
     dateRange: undefined,
   })
 
@@ -257,6 +285,7 @@ export default function Home() {
         types: filters.types,
         phases: filters.phases,
         dateRange: filters.dateRange,
+        authors: filters.authors
       })
       setItems(data.results)
       setTotalPages(Math.ceil(data.count / 10))
@@ -270,16 +299,19 @@ export default function Home() {
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
-        const [typesResponse, phasesResponse] = await Promise.all([
+        const [typesResponse, phasesResponse, authorsResponse] = await Promise.all([
           fetch(`https://legis.passosperdidos.pt/types/`),
           fetch(`https://legis.passosperdidos.pt/phases/`),
+          fetch(`https://legis.passosperdidos.pt/authors/`),
         ])
         
         const typesData = await typesResponse.json()
         const phasesData = await phasesResponse.json()
+        const authorsData = await authorsResponse.json()
         
         setAllTypes(typesData.filter((type: string) => type !== "Todos"))
         setAllPhases(phasesData)
+        setAllAuthors(authorsData)
       } catch (error) {
         console.error("Error fetching initial data:", error)
       }
@@ -300,9 +332,10 @@ export default function Home() {
   const handleFilterChange = (
     types: string[],
     phases: string[],
+    authors: string[],
     dateRange: DateRange | undefined
   ) => {
-    setFilters({ types, phases, dateRange })
+    setFilters({ types, phases, authors, dateRange })
     setCurrentPage(1)
   }
 
@@ -314,12 +347,15 @@ export default function Home() {
             isLoading={isLoading}
             allTypes={allTypes}
             selectedTypes={filters.types}
-            onTypesChange={(types) => handleFilterChange(types, filters.phases, filters.dateRange)}
+            onTypesChange={(types) => handleFilterChange(types, filters.phases, filters.authors, filters.dateRange)}
             allPhases={allPhases}
             selectedPhases={filters.phases}
-            onPhasesChange={(phases) => handleFilterChange(filters.types, phases, filters.dateRange)}
-            onDateChange={(dateRange) => handleFilterChange(filters.types, filters.phases, dateRange)}
-            onClearDate={() => handleFilterChange(filters.types, filters.phases, undefined)}
+            allAuthors={allAuthors}
+            selectedAuthors={filters.authors}
+            onPhasesChange={(phases) => handleFilterChange(filters.types, phases, filters.authors, filters.dateRange)}
+            onAuthorsChange={(authors: string[]) => handleFilterChange(filters.types, filters.phases, authors, filters.dateRange)}
+            onDateChange={(dateRange) => handleFilterChange(filters.types, filters.phases, filters.authors, dateRange)}
+            onClearDate={() => handleFilterChange(filters.types, filters.phases, filters.authors, undefined)}
             date={filters.dateRange}
           />
         </div>
@@ -346,12 +382,15 @@ export default function Home() {
                     isLoading={isLoading}
                     allTypes={allTypes}
                     selectedTypes={filters.types}
-                    onTypesChange={(types) => handleFilterChange(types, filters.phases, filters.dateRange)}
+                    onTypesChange={(types) => handleFilterChange(types, filters.phases, filters.authors, filters.dateRange)}
                     allPhases={allPhases}
                     selectedPhases={filters.phases}
-                    onPhasesChange={(phases) => handleFilterChange(filters.types, phases, filters.dateRange)}
-                    onDateChange={(dateRange) => handleFilterChange(filters.types, filters.phases, dateRange)}
-                    onClearDate={() => handleFilterChange(filters.types, filters.phases, undefined)}
+                    allAuthors={allAuthors}
+                    selectedAuthors={filters.authors}
+                    onAuthorsChange={(authors: string[]) => handleFilterChange(filters.types, filters.phases, authors, filters.dateRange)}
+                    onDateChange={(dateRange) => handleFilterChange(filters.types, filters.phases, filters.authors, dateRange)}
+                    onPhasesChange={(phases) => handleFilterChange(filters.types, phases, filters.authors, filters.dateRange)}
+                    onClearDate={() => handleFilterChange(filters.types, filters.phases, filters.authors, undefined)}
                     date={filters.dateRange}
                   />
                 </div>
@@ -360,7 +399,7 @@ export default function Home() {
 
             <DateRangeSelector
               date={filters.dateRange}
-              onDateChange={(dateRange) => handleFilterChange(filters.types, filters.phases, dateRange)}
+              onDateChange={(dateRange) => handleFilterChange(filters.types, filters.phases, filters.authors, dateRange)}
             />
           </div>
 

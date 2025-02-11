@@ -9,16 +9,19 @@ import { MultiSelect } from "./multiselect"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface SidebarProps {
-  allTypes: string[]
-  selectedTypes: string[]
-  onTypesChange: (types: string[]) => void
-  allPhases: string[]
-  selectedPhases: string[]
-  onPhasesChange: (phases: string[]) => void
-  isLoading?: boolean
-  date?: DateRange
-  onDateChange: (date: DateRange | undefined) => void
-  onClearDate: () => void
+  isLoading: boolean;
+  allTypes: string[];
+  selectedTypes: string[];
+  onTypesChange: (types: string[]) => void;
+  allPhases: string[];
+  selectedPhases: string[];
+  onPhasesChange: (phases: string[]) => void;
+  allAuthors: string[];
+  selectedAuthors: string[];
+  onAuthorsChange: (authors: string[]) => void;
+  onDateChange: (dateRange: DateRange | undefined) => void;
+  onClearDate: () => void;
+  date: DateRange | undefined;
 }
 
 export function Sidebar({
@@ -32,6 +35,9 @@ export function Sidebar({
   date,
   onDateChange,
   onClearDate,
+  allAuthors,
+  selectedAuthors,
+  onAuthorsChange,
 }: SidebarProps) {
   const handleClearFilters = () => {
     onTypesChange([]); // Clear selected types
@@ -70,6 +76,22 @@ export function Sidebar({
                   {allPhases.map((phase) => (
                     <SelectItem key={phase} value={phase}>
                       {phase}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="dark:bg-[#09090B] ">
+              <h3 className="text-sm font-medium mb-2">Autor</h3>
+              <Select onValueChange={(value) => onAuthorsChange([value])} value={selectedAuthors[0]}>
+                <SelectTrigger className="dark:bg-[#09090B]">
+                  <SelectValue className="dark:bg-[#09090B]" placeholder="Selecione autores..." />
+                </SelectTrigger>
+                <SelectContent className="dark:bg-[#09090B]">
+                  {allAuthors.map((author) => (
+                    <SelectItem key={author} value={author}>
+                      {author}
                     </SelectItem>
                   ))}
                 </SelectContent>
