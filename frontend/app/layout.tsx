@@ -5,6 +5,8 @@ import Header from "./components/header"
 import Footer from "./components/footer"
 import { Toaster } from "@/components/ui/toaster"
 import type React from "react" // Added import for React
+import { GoogleAnalytics } from '@next/third-parties/google'
+
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -29,6 +31,7 @@ export default function RootLayout({
           <Footer />
         </ThemeProvider>
       </body>
+      <GoogleAnalytics gaId="G-GV4Z39CNG3" />
     </html>
   )
 }
