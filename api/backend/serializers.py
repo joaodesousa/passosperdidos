@@ -13,5 +13,4 @@ class ProjetoLeiSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProjetoLei
-        fields = ['id', 'title', 'type', 'legislature', 'date', 'phase', 
-                 'link', 'author', 'description', 'external_id', 'phases']
+        fields = ['id', 'title', 'type', 'legislature', 'date', 'link', 'author', 'description', 'external_id', 'phases']
