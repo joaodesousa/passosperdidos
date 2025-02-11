@@ -17,3 +17,4 @@ services:
 networks:
   app_network:
     external: true  # Use an existing network if the containers are on the same network
+ 
