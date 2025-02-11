@@ -8,8 +8,6 @@ services:
     network_mode: host
     env_file: .env
     command: gunicorn api.wsgi:application --bind 0.0.0.0:8001
-    ports:
-      - "8001:8001"
     volumes:
       - .:/app
     environment:
