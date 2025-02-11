@@ -13,8 +13,9 @@ services:
       - .:/app
     environment:
       DATABASE_URL: ${DATABASE_URL}  # Make sure to update with the correct connection string
+    networks:
+      - postgresql_app_network  # Ensure this matches the actual network name
 
 networks:
-  app_network:
-    external: true  # Use an existing network if the containers are on the same network
- 
+  postgresql_app_network:
+    external: true  # Use an existing network
