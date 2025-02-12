@@ -18,7 +18,7 @@ class AuthorListView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get(self, request):
-        types = ProjetoLei.objects.values_list('authors', flat=True).distinct()
+        types = ProjetoLei.objects.values_list('authors__name', flat=True).distinct()
         return Response(list(types))
     
 class TypeListView(APIView):
