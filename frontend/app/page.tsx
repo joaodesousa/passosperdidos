@@ -72,7 +72,7 @@ async function fetchItems(params: {
   }
 
   if (params.authors.length > 0) {
-    queryParams.append('author', params.authors.join(','))
+    queryParams.append('authors', params.authors.join(','))
   }
 
   if (params.dateRange?.from) {
@@ -82,7 +82,7 @@ async function fetchItems(params: {
     queryParams.append('end_date', format(params.dateRange.to, "yyyy-MM-dd"))
   }
 
-  const response = await fetch(`https://legis.passosperdidos.pt/projetoslei/?${queryParams}`, {
+  const response = await fetch(`http://localhost:8000/projetoslei/?${queryParams}`, {
     headers: { 'Authorization': `Bearer ${token}` },
   })
   return response.json()
@@ -302,7 +302,7 @@ export default function Home() {
         const [typesResponse, phasesResponse, authorsResponse] = await Promise.all([
           fetch(`https://legis.passosperdidos.pt/types/`),
           fetch(`https://legis.passosperdidos.pt/phases/`),
-          fetch(`https://legis.passosperdidos.pt/authors/`),
+          fetch(`http://localhost:8000/authors/`),
         ])
         
         const typesData = await typesResponse.json()
@@ -347,7 +347,7 @@ export default function Home() {
       dateRange: undefined
     });
     setCurrentPage(1);
-    setSearchTerm("");  // Add this if you want to clear the search term too
+    setSearchTerm(""); 
   }, []);
 
 

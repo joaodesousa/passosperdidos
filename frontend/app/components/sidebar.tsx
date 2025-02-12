@@ -1,28 +1,31 @@
+"use client"
+
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import type { DateRange } from "react-day-picker"
 import { format } from "date-fns"
-import { CalendarIcon } from "lucide-react"
+import { CalendarIcon, Check, ChevronsUpDown } from 'lucide-react'
 import { cn } from "@/lib/utils"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { MultiSelect } from "./multiselect"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useState } from "react"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 
 interface SidebarProps {
-  isLoading: boolean;
-  allTypes: string[];
-  selectedTypes: string[];
-  onTypesChange: (types: string[]) => void;
-  allPhases: string[];
-  selectedPhases: string[];
-  onPhasesChange: (phases: string[]) => void;
-  allAuthors: string[];
-  selectedAuthors: string[];
-  onAuthorsChange: (authors: string[]) => void;
-  onDateChange: (dateRange: DateRange | undefined) => void;
-  onClearDate: () => void;
-  date: DateRange | undefined;
-  onClearAllFilters: () => void;
+  isLoading: boolean
+  allTypes: string[]
+  selectedTypes: string[]
+  onTypesChange: (types: string[]) => void
+  allPhases: string[]
+  selectedPhases: string[]
+  onPhasesChange: (phases: string[]) => void
+  allAuthors: string[]
+  selectedAuthors: string[]
+  onAuthorsChange: (authors: string[]) => void
+  onDateChange: (dateRange: DateRange | undefined) => void
+  onClearDate: () => void
+  date: DateRange | undefined
+  onClearAllFilters: () => void
 }
 
 export function Sidebar({
@@ -41,43 +44,14 @@ export function Sidebar({
   onAuthorsChange,
   onClearAllFilters,
 }: SidebarProps) {
-  const handleClearFilters = () => {
-    onClearAllFilters();
-  };
+  const [open, setOpen] = useState(false)
+  const [authorValue, setAuthorValue] = useState("")
 
-  const FilterSection = ({
-    title,
-    options,
-    selected,
-    onChange,
-    showClear = false,
-    onClear,
-  }: {
-    title: string
-    options: string[]
-    selected: string[]
-    onChange: (selected: string[]) => void
-    showClear?: boolean
-    onClear?: () => void
-  }) => (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-          {title}
-        </h3>
-        {showClear && selected.length > 0 && (
-          <Button
-            variant="ghost"
-            onClick={onClear}
-            className="h-8 px-2 text-sm dark:border dark:border-white dark:border-opacity-20"
-          >
-            Limpar
-          </Button>
-        )}
-      </div>
-      {/* ... existing code ... */}
-    </div>
-  )
+  const handleClearFilters = () => {
+    setAuthorValue(""); // Reset local state
+    onClearAllFilters(); // Call the function from the parent
+  };
+  
 
   return (
     <div className="w-full md:w-64 dark:bg-[#09090B] md:dark:border md:dark:border-blue md:dark:border-opacity-20 p-4 rounded-lg shadow">
@@ -100,36 +74,77 @@ export function Sidebar({
               />
             </div>
 
-            <div className="dark:bg-[#09090B] ">
+            <div className="dark:bg-[#09090B]">
               <h3 className="text-sm font-medium mb-2">Fase</h3>
-              <Select onValueChange={(value) => onPhasesChange([value])} value={selectedPhases[0]}>
-                <SelectTrigger className=" dark:bg-[#09090B] ">
-                  <SelectValue className=" dark:bg-[#09090B] " placeholder="Selecione fases..." />
-                </SelectTrigger>
-                <SelectContent className=" dark:bg-[#09090B] ">
-                  {allPhases.map((phase) => (
-                    <SelectItem key={phase} value={phase}>
-                      {phase}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between">
+                    {selectedPhases[0] || "Selecione fases..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0" align="start">
+                  <Command className="w-full">
+                    <CommandInput placeholder="Pesquisar fases..." />
+                    <CommandList>
+                      <CommandEmpty>Nenhuma fase encontrada.</CommandEmpty>
+                      <CommandGroup>
+                        {allPhases.map((phase) => (
+                          <CommandItem
+                            key={phase}
+                            onSelect={() => {
+                              onPhasesChange([phase])
+                              setOpen(false)
+                            }}
+                          >
+                            <Check
+                              className={cn("mr-2 h-4 w-4", selectedPhases[0] === phase ? "opacity-100" : "opacity-0")}
+                            />
+                            {phase}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
-            <div className="dark:bg-[#09090B] ">
+            <div className="dark:bg-[#09090B]">
               <h3 className="text-sm font-medium mb-2">Autor</h3>
-              <Select onValueChange={(value) => onAuthorsChange([value])} value={selectedAuthors[0]}>
-                <SelectTrigger className="dark:bg-[#09090B]">
-                  <SelectValue className="dark:bg-[#09090B]" placeholder="Selecione autores..." />
-                </SelectTrigger>
-                <SelectContent className="dark:bg-[#09090B]">
-                  {allAuthors.map((author) => (
-                    <SelectItem key={author} value={author}>
-                      {author}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between">
+                    {authorValue ? allAuthors.find((author) => author === authorValue) : "Selecione autores..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0" align="start">
+                  <Command className="w-full">
+                    <CommandInput placeholder="Pesquisar autores..." />
+                    <CommandList>
+                      <CommandEmpty>Nenhum autor encontrado.</CommandEmpty>
+                      <CommandGroup>
+                        {allAuthors.map((author) => (
+                          <CommandItem
+                            key={author}
+                            onSelect={() => {
+                              setAuthorValue(author === authorValue ? "" : author)
+                              onAuthorsChange([author])
+                              setOpen(false)
+                            }}
+                          >
+                            <Check
+                              className={cn("mr-2 h-4 w-4", authorValue === author ? "opacity-100" : "opacity-0")}
+                            />
+                            {author}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="md:hidden">
@@ -138,7 +153,10 @@ export function Sidebar({
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className={cn("dark:bg-[#09090B] w-full justify-start text-left font-normal", !date && "text-muted-foreground")}
+                    className={cn(
+                      "dark:bg-[#09090B] w-full justify-start text-left font-normal",
+                      !date && "text-muted-foreground",
+                    )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {date?.from ? (
@@ -184,4 +202,3 @@ export function Sidebar({
     </div>
   )
 }
-

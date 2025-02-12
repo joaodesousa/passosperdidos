@@ -18,8 +18,8 @@ class AuthorListView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get(self, request):
-        types = ProjetoLei.objects.values_list('authors__name', flat=True).distinct()
-        return Response(list(types))
+        authors = ProjetoLei.objects.values_list('authors__name', flat=True).distinct().order_by('authors__name')
+        return Response(list(authors))
     
 class TypeListView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
@@ -39,7 +39,7 @@ class PhaseListView(APIView):
 
 class ProjetoLeiViewSet(ReadOnlyModelViewSet):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
     queryset = ProjetoLei.objects.all().order_by('-date')
     serializer_class = ProjetoLeiSerializer
@@ -56,10 +56,11 @@ class ProjetoLeiViewSet(ReadOnlyModelViewSet):
         start_date_param = self.request.query_params.get('start_date', None)
         end_date_param = self.request.query_params.get('end_date', None)
 
-        # Handle author filter
-        author_param = self.request.query_params.get('author', None)
+        author_param = self.request.query_params.get('authors', None)
         if author_param:
-            queryset = queryset.filter(author__exact=author_param)
+            author_names = author_param.split(',')  # Support multiple authors
+            queryset = queryset.filter(authors__name__icontains=author_param)
+        print("Author filter param:", author_param)
 
         # Handle phase filter
         phase_param = self.request.query_params.get('phase', None)

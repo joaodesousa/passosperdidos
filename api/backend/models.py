@@ -19,7 +19,7 @@ class Phase(models.Model):
 
 
 class Attachment(models.Model):
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=500)
     file_url = models.URLField()
 
     def __str__(self):

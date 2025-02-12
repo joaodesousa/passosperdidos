@@ -50,7 +50,7 @@ export function MultiSelect({ options, selected, onChange, placeholder = "Select
 
   return (
     <Command onKeyDown={handleKeyDown} className="overflow-visible bg-transparent">
-      <div className="dark:bg-[#09090B] group border border-input px-3 py-2 text-sm ring-offset-background rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+      <div className="dark:bg-[#09090B] bg-white group border border-input px-3 py-2 text-sm ring-offset-background rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
         <div className="flex gap-1 flex-wrap">
           {selected.map((option) => {
             return (
