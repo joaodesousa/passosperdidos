@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react"
 import Link from "next/link"
 import { format } from "date-fns"
-import { CalendarIcon, File } from "lucide-react"
+import { BookType, CalendarIcon, File } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -152,8 +152,8 @@ const ItemCard = ({ item }: { item: Item }) => {
 )
 
   return (
-    <Card className="dark:bg-[#09090B]">
-      <CardHeader className="pb-4">
+    <Card className="dark:bg-[#09090B] flex flex-col h-full">
+      <CardHeader className="pb-4 flex-grow">
         <div className="flex flex-wrap justify-between items-center text-sm text-muted-foreground mb-3">
           <div className="flex space-x-2 text-xs">
             <span className="break-words">{item.type}</span>
@@ -172,7 +172,7 @@ const ItemCard = ({ item }: { item: Item }) => {
           </div>
         </div>
         <Badge 
-          variant="secondary" 
+          variant="default" 
           className={cn(
             "border-0 w-fit", 
             item.author === "PS" ? "bg-red-100 text-red-800" : 
@@ -189,14 +189,14 @@ const ItemCard = ({ item }: { item: Item }) => {
         >
             {item.author}
         </Badge>
-        <h3 className="text-lg font-semibold leading-tight tracking-tight break-words hyphens-auto">
+        <h3 className="text-lg font-semibold leading-tight tracking-tight mb-2 mt-2">
           {item.title}
         </h3>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-0 mt-auto">
       <Link href={item.link} target="_blank">
-        <Button variant="link" className="text-blue-600 p-0 px-3 py-2 hover:dark:bg-white hover:dark:bg-opacity-10 rounded-full hover:bg-black hover:bg-opacity-10"> 
-            <File />
+        <Button variant="link" className="text-blue-600 outline-blue-600 outline p-0 px-3 py-2 hover:no-underline hover:text-white rounded-full hover:bg-blue-600 dark:outline-white dark:text-white hover:dark:bg-white hover:dark:text-black"> 
+            <BookType /> <p className="no-underline">Proposta</p>
         </Button>
         </Link>
       </CardContent>

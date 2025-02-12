@@ -1,5 +1,5 @@
-# Created by https://www.toptal.com/developers/gitignore/api/django,nextjs,venv,dotenv
-# Edit at https://www.toptal.com/developers/gitignore?templates=django,nextjs,venv,dotenv
+# Created by https://www.toptal.com/developers/gitignore/api/django,venv,dotenv
+# Edit at https://www.toptal.com/developers/gitignore?templates=django,venv,dotenv
 
 ### Django ###
 *.log
@@ -138,6 +138,7 @@ env/
 venv/
 ENV/
 env.bak/
+.env.local
 venv.bak/
 
 # Spyder project settings
@@ -173,42 +174,6 @@ cython_debug/
 
 ### dotenv ###
 
-### NextJS ###
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
-
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# local env files
-.env*.local
-
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-
 ### venv ###
 # Virtualenv
 # http://iamzed.com/2009/05/07/a-primer-on-virtualenv/
@@ -221,4 +186,4 @@ next-env.d.ts
 pyvenv.cfg
 pip-selfcheck.json
 
-# End of https://www.toptal.com/developers/gitignore/api/django,nextjs,venv,dotenv
+# End of https://www.toptal.com/developers/gitignore/api/django,venv,dotenv

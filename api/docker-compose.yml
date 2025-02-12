@@ -12,7 +12,7 @@ services:
     volumes:
       - .:/app
     environment:
-      DATABASE_URL: ${DATABASE_URL}  # Make sure to update with the correct connection string
+      DATABASE_URL: "postgres" # Make sure to update with the correct connection string
     networks:
       - postgresql_app_network  # Ensure this matches the actual network name
 
