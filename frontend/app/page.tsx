@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react"
 import Link from "next/link"
 import { format } from "date-fns"
-import { BookType, CalendarIcon, File } from "lucide-react"
+import { BookType, CalendarIcon, File, LetterText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -191,7 +191,12 @@ const ItemCard = ({ item }: { item: Item }) => {
           {item.title}
         </h3>
       </CardHeader>
-      <CardContent className="pt-0 mt-auto">
+      <CardContent className="pt-0 mt-auto flex space-x-4">
+      <Link href={`/iniciativa/${item.id}`}>
+        <Button variant="link" className="text-blue-600 outline-blue-600 outline p-0 px-3 py-2 hover:no-underline hover:text-white rounded-full hover:bg-blue-600 dark:outline-white dark:text-white hover:dark:bg-white hover:dark:text-black"> 
+            <LetterText /> <p className="no-underline">Detalhes</p>
+        </Button>
+        </Link>
       <Link href={item.link} target="_blank">
         <Button variant="link" className="text-blue-600 outline-blue-600 outline p-0 px-3 py-2 hover:no-underline hover:text-white rounded-full hover:bg-blue-600 dark:outline-white dark:text-white hover:dark:bg-white hover:dark:text-black"> 
             <BookType /> <p className="no-underline">Proposta</p>
