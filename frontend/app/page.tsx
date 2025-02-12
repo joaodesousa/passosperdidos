@@ -30,7 +30,7 @@ interface Item {
   link: string
   phases: Phase[]
   date: number
-  author: string
+  authors: { author_type: string; name: string }[]
 }
 
 interface FilterState {
@@ -172,22 +172,20 @@ const ItemCard = ({ item }: { item: Item }) => {
           </div>
         </div>
         <Badge 
-          variant="default" 
-          className={cn(
-            "border-0 w-fit", 
-            item.author === "PS" ? "bg-red-100 text-red-800" : 
-            item.author === "PSD" ? "bg-orange-100 text-orange-500" : 
-            item.author === "CH" ? "bg-blue-100 text-blue-800" : 
-            item.author === "BE" ? "bg-red-300 text-white" : 
-            item.author === "L" ? "bg-green-100 text-green-800" : 
-            item.author === "PAN" ? "bg-green-100 text-blue-600" : 
-            item.author === "PCP" ? "bg-red-300 text-red-900" : 
-            item.author === "IL" ? "bg-cyan-500 text-white" : 
-            item.author === "CDS-PP" ? "bg-blue-500 text-white" : 
-            "bg-[#2a2b2e] text-white"
-          )}
+          className={item.authors.some(author => author.author_type === "Grupo" && author.name === "PS") ? "bg-pink-400 text-white w-fit" : 
+            item.authors.some(author => author.author_type === "Grupo" && author.name === "CH") ? "bg-blue-950 text-white w-fit" : 
+            item.authors.some(author => author.author_type === "Grupo" && author.name === "IL") ? "bg-cyan-400 text-white w-fit" : 
+            item.authors.some(author => author.author_type === "Grupo" && author.name === "PCP") ? "bg-red-600 text-white w-fit" : 
+            item.authors.some(author => author.author_type === "Grupo" && author.name === "BE") ? "bg-red-600 text-white w-fit" : 
+            item.authors.some(author => author.author_type === "Grupo" && author.name === "CDS-PP") ? "bg-blue-500 text-white w-fit" : 
+            item.authors.some(author => author.author_type === "Grupo" && author.name === "L") ? "bg-green-500 text-white w-fit" : 
+            item.authors.some(author => author.author_type === "Grupo" && author.name === "PAN") ? "bg-green-800 text-white w-fit" : 
+                      item.authors.some(author => author.author_type === "Grupo" && author.name === "PSD") ? "bg-orange-500 text-white w-fit" : "bg-default w-fit"} 
         >
-            {item.author}
+            {item.authors
+              .filter(author => author.author_type === "Grupo")
+              .map(author => author.name)
+              .join(', ')}
         </Badge>
         <h3 className="text-lg font-semibold leading-tight tracking-tight mb-2 mt-2">
           {item.title}
@@ -259,6 +257,16 @@ const DateRangeSelector = ({
   </Popover>
 )
 
+const LoadingSkeleton = () => (
+  <div className="h-10 bg-gray-700 rounded animate-pulse w-full"></div>
+);
+
+const LoadingPaginationSkeleton = () => (
+  <div className="mt-5 flex justify-center">
+    <LoadingSkeleton />
+  </div>
+);
+
 // Main component
 export default function Home() {
   const [items, setItems] = useState<Item[]>([])
@@ -275,6 +283,7 @@ export default function Home() {
     authors: [],
     dateRange: undefined,
   })
+  const [isFirstLoad, setIsFirstLoad] = useState(true)
 
   const fetchData = useCallback(async () => {
     setIsLoading(true)
@@ -293,6 +302,7 @@ export default function Home() {
       console.error("Error fetching data:", error)
     } finally {
       setIsLoading(false)
+      setIsFirstLoad(false)
     }
   }, [currentPage, filters, searchTerm])
 
@@ -302,7 +312,7 @@ export default function Home() {
         const [typesResponse, phasesResponse, authorsResponse] = await Promise.all([
           fetch(`https://legis.passosperdidos.pt/types/`),
           fetch(`https://legis.passosperdidos.pt/phases/`),
-          fetch(`http://localhost:8000/authors/`),
+          fetch(`https://legis.passosperdidos.pt/authors/`),
         ])
         
         const typesData = await typesResponse.json()
@@ -356,7 +366,7 @@ export default function Home() {
       <div className="flex gap-4">
         <div className="hidden md:block">
           <Sidebar
-            isLoading={isLoading}
+            isLoading={isFirstLoad}
             allTypes={allTypes}
             selectedTypes={filters.types}
             onTypesChange={(types) => handleFilterChange(types, filters.phases, filters.authors, filters.dateRange)}
@@ -375,13 +385,17 @@ export default function Home() {
 
         <div className="flex-1 min-w-0">
           <div className="flex gap-4 mb-6">
-            <Input
-              type="search"
-              placeholder="Pesquisar..."
-              className="dark:bg-[#09090B] flex-1"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+            {isFirstLoad ? (
+              <LoadingSkeleton />
+            ) : (
+              <Input
+                type="search"
+                placeholder="Pesquisar..."
+                className="dark:bg-[#09090B] flex-1"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            )}
 
             <Sheet>
               <SheetTrigger asChild className="md:hidden">
@@ -392,7 +406,7 @@ export default function Home() {
               <SheetContent side="left" className="w-[280px] sm:w-[340px] dark:bg-[#09090B]">
                 <div className="py-4">
                   <Sidebar
-                    isLoading={isLoading}
+                    isLoading={isFirstLoad}
                     allTypes={allTypes}
                     selectedTypes={filters.types}
                     onTypesChange={(types) => handleFilterChange(types, filters.phases, filters.authors, filters.dateRange)}
@@ -410,12 +424,17 @@ export default function Home() {
                 </div>
               </SheetContent>
             </Sheet>
-            <DateRangeSelector
-              date={filters.dateRange}
-              onDateChange={(dateRange) => handleFilterChange(filters.types, filters.phases, filters.authors, dateRange)}
-            />
+            
+            {isFirstLoad ? (
+              <LoadingSkeleton />
+            ) : (
+              <DateRangeSelector
+                date={filters.dateRange}
+                onDateChange={(dateRange) => handleFilterChange(filters.types, filters.phases, filters.authors, dateRange)}
+              />
+            )}
           </div>
-
+          
           <div className="grid gap-6 grid-cols-1 md:grid-cols-2 w-full">
             {isLoading
               ? Array.from({ length: 6 }, (_, index) => (
@@ -438,13 +457,17 @@ export default function Home() {
                 )}
           </div>
 
-          <div className="mt-8 flex justify-center">
-            <PaginationControls
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-            />
-          </div>
+          {isLoading ? (
+            <LoadingPaginationSkeleton />
+          ) : (
+            <div className="mt-8 flex justify-center">
+              <PaginationControls
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+            </div>
+          )}
         </div>
       </div>
     </main>
