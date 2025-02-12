@@ -39,7 +39,7 @@ class Author(models.Model):
 
 
 class Vote(models.Model):
-    date = models.DateField()
+    date = models.DateField(null=True)
     result = models.CharField(max_length=50)
     details = models.TextField(null=True, blank=True)
 
@@ -52,7 +52,7 @@ class ProjetoLei(models.Model):
     type = models.CharField(max_length=255, db_index=True)
     legislature = models.ForeignKey(Legislature, on_delete=models.CASCADE, related_name="projetos_lei")
     date = models.DateField(null=True)
-    link = models.URLField()
+    link = models.URLField(max_length=500)
     description = models.TextField(null=True)
     external_id = models.CharField(max_length=1000, unique=True)
     authors = models.ManyToManyField(Author, related_name="projetos_lei")
