@@ -39,7 +39,7 @@ class PhaseListView(APIView):
 
 class ProjetoLeiViewSet(ReadOnlyModelViewSet):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticated]
 
     queryset = ProjetoLei.objects.all().order_by('-date')
     serializer_class = ProjetoLeiSerializer

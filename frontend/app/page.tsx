@@ -175,7 +175,7 @@ const ItemCard = ({ item }: { item: Item }) => {
           className={item.authors.some(author => author.author_type === "Grupo" && author.name === "PS") ? "bg-pink-400 text-white w-fit" : 
             item.authors.some(author => author.author_type === "Grupo" && author.name === "CH") ? "bg-blue-950 text-white w-fit" : 
             item.authors.some(author => author.author_type === "Grupo" && author.name === "IL") ? "bg-cyan-400 text-white w-fit" : 
-            item.authors.some(author => author.author_type === "Grupo" && author.name === "PCP") ? "bg-red-600 text-white w-fit" : 
+            item.authors.some(author => author.author_type === "Grupo" && author.name === "PCP") ? "bg-red-800 text-white w-fit" : 
             item.authors.some(author => author.author_type === "Grupo" && author.name === "BE") ? "bg-red-600 text-white w-fit" : 
             item.authors.some(author => author.author_type === "Grupo" && author.name === "CDS-PP") ? "bg-blue-500 text-white w-fit" : 
             item.authors.some(author => author.author_type === "Grupo" && author.name === "L") ? "bg-green-500 text-white w-fit" : 
