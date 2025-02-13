@@ -3,12 +3,14 @@
 import { useParams } from "next/navigation"
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { ArrowLeft, CalendarIcon, FileText, Download, Users, Paperclip, Clock, Vote } from "lucide-react"
+import { ArrowLeft, CalendarIcon, FileText, Check, Download, Users, Paperclip, Clock, Vote, Minus, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 interface Author {
   name: string
@@ -61,6 +63,12 @@ interface ApiResponse {
 interface GroupedAuthors {
   [key: string]: Author[]
 }
+
+interface PartyVote {
+  party: string;
+  vote: "A Favor" | "Contra" | "Abstenção";
+}
+
 
 export default function ProposalDetails() {
   const params = useParams()
@@ -123,9 +131,93 @@ export default function ProposalDetails() {
     return acc
   }, {})
 
-  const sortedPhases = [...proposal.phases].sort((a, b) => 
-    new Date(b.date).getTime() - new Date(a.date).getTime()
-  )
+  const sortedPhases = [...proposal.phases].sort((a, b) => {
+    const dateA = new Date(a.date).getTime();
+    const dateB = new Date(b.date).getTime();
+    
+    // Sort by date ascending
+    return dateA - dateB; 
+  });
+
+  const renderVoteIcon = (vote: string) => {
+    switch (vote) {
+      case "A Favor":
+        return <Check className="h-4 w-4 text-green-500" />
+      case "Contra":
+        return <X className="h-4 w-4 text-red-500" />
+      case "Abstenção":
+        return <Minus className="h-4 w-4 text-yellow-500" />
+      default:
+        return null
+    }
+  }
+
+  function parseVoteDetails(details: string): PartyVote[] {
+    const votesByType: PartyVote[] = [];
+    
+    // Split by <BR> to get each vote type section
+    const sections = details.split("<BR>");
+    
+    sections.forEach(section => {
+      // Extract vote type and parties
+      const [voteType, partiesStr] = section.split(":");
+      if (!partiesStr) return;
+      
+      // Clean up vote type
+      const vote = voteType.trim() as "A Favor" | "Contra" | "Abstenção";
+      
+      // Extract parties from <I> tags
+      const partyMatches = partiesStr.match(/<I>[^<]+<\/I>/g) || [];
+      
+      partyMatches.forEach(match => {
+        // Clean up party name
+        const party = match.replace(/<\/?I>/g, '').trim();
+        votesByType.push({ party, vote });
+      });
+    });
+    
+    return votesByType;
+  }
+
+  const VoteTable = ({ details }: { details: string }) => {
+    const votesByType = parseVoteDetails(details);
+    
+    const renderVoteIcon = (vote: string) => {
+      switch (vote) {
+        case "A Favor":
+          return <Check className="h-4 w-4 text-green-500" />;
+        case "Contra":
+          return <X className="h-4 w-4 text-red-500" />;
+        case "Abstenção":
+          return <Minus className="h-4 w-4 text-yellow-500" />;
+        default:
+          return null;
+      }
+    };
+  
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Partido</TableHead>
+            <TableHead>Voto</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {votesByType.map((vote, index) => (
+            <TableRow key={index}>
+              <TableCell>{vote.party}</TableCell>
+              <TableCell className="flex items-center">
+                {renderVoteIcon(vote.vote)}
+                <span className="ml-2">{vote.vote}</span>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    );
+  };
+
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -171,11 +263,13 @@ export default function ProposalDetails() {
               {sortedPhases.map((phase, index) => (
                 <div key={phase.id} className="flex items-start">
                   <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center mr-4">
-                    {sortedPhases.length - index}
+                    {index + 1}
                   </div>
                   <div className="flex-grow">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{phase.name}</h3>
-                    <time className="text-sm text-gray-500 dark:text-gray-400">{phase.date}</time>
+                    <time className="text-sm text-gray-500 dark:text-gray-400">
+                      {new Date(phase.date).toLocaleDateString('pt-PT')}
+                    </time>
                   </div>
                 </div>
               ))}
@@ -211,44 +305,24 @@ export default function ProposalDetails() {
         </Card>
 
         {/* Votes Card */}
-        {proposal.votes.length > 1 ? (
-          <Card className="dark:bg-[#09090B]">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Vote className="mr-2 h-5 w-5" />
-                Votações
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {proposal.votes.map((vote, index) => (
-                <div key={index} className="mb-4 last:mb-0">
-                  <h3 className="font-semibold mb-2">Votação</h3>
-                  <p>
-                    <strong>Data:</strong> {vote.date || "Não disponível"}
-                  </p>
-                  <p>
-                    <strong>Resultado:</strong> {vote.result === "Unknown" ? "Nenhuma votação ainda." : vote.result}
-                  </p>
-                  {vote.details && vote.result !== "Unknown" && (
-                    <p>
-                      <strong>Detalhes:</strong> {vote.details}
-                    </p>
-                  )}
-                  {index < proposal.votes.length - 1 && <Separator className="my-4" />}
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="dark:bg-[#09090B]">
+        {proposal.votes.length > 0 && (
+          <Card className="mt-6">
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <Vote className="mr-2 h-5 w-5" />
-              Votações
-            </CardTitle>
+            <CardTitle className="text-xl">Resultados das Votações</CardTitle>
           </CardHeader>
           <CardContent>
-            <p>Brevemente</p>
+            <Accordion type="single" collapsible className="w-full">
+              {proposal.votes.map((result, index) => (
+                <AccordionItem key={index} value={`item-${index}`} >
+                  <AccordionTrigger>
+                    {result.date ? new Date(result.date).toLocaleDateString('pt-PT') : 'Data não disponível'} - {result.result}
+                  </AccordionTrigger>
+                  <AccordionContent>
+                  {result.details && <VoteTable details={result.details} />}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
           </CardContent>
         </Card>
         )}

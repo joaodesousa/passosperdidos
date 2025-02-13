@@ -3,24 +3,23 @@ name: Deploy DRF API to VPS
 on:
   push:
     branches:
-      - main  
+      - main
+    paths:
+      - 'api/**'  # Only trigger deployment if files inside "api/" change
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     
     steps:
-      # Checkout the code
       - name: Checkout repository
         uses: actions/checkout@v2
         
-      # Set up SSH key for deployment
       - name: Setup SSH key
         uses: webfactory/ssh-agent@v0.5.3
         with:
           ssh-private-key: ${{ secrets.VPS_SSH }}
 
-      # Fix SSH permissions
       - name: Adjust SSH permissions
         run: |
           mkdir -p ~/.ssh
@@ -28,21 +27,19 @@ jobs:
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
 
-      # Test SSH connection
       - name: Test SSH connection
         run: ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "echo 'SSH Connected Successfully'"
 
-      # Deploy to VPS
       - name: Deploy to VPS
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-            set -e  # Exit immediately if a command fails
+            set -e
 
             echo "🔄 Changing directory..."
             cd /var/www/passosperdidos/api 
 
             echo "🔧 Fixing Git safe directory issue..."
-            sudo chown -R $USER:$USER /var/www/passosperdidos  # Fix ownership
+            sudo chown -R $USER:$USER /var/www/passosperdidos  
             sudo git config --global --add safe.directory /var/www/passosperdidos
 
             echo "⬇️ Pulling latest code..."
@@ -57,9 +54,8 @@ jobs:
             echo "✅ Deployment complete!"
           EOF
 
-      # Optional: Clean up Docker images
       - name: Clean up old Docker images
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-            docker system prune -f  # Remove unused Docker images and containers
+            docker system prune -f
           EOF
