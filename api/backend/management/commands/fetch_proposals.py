@@ -8,6 +8,104 @@ from datetime import datetime
 class Command(BaseCommand):
     help = 'Fetches proposals from an XML URL and stores them in the database'
 
+    def parse_votes(self, proposal):
+        """Parse all votes from different locations in the XML."""
+        votes = []
+        
+        # Parse direct votes under IniEventos/Votacao
+        for vote_elem in proposal.findall('.//IniEventos/Pt_gov_ar_objectos_iniciativas_EventosOut/Votacao/pt_gov_ar_objectos_VotacaoOut'):
+            try:
+                vote_data = {
+                    'date': vote_elem.find('data').text if vote_elem.find('data') is not None else None,
+                    'result': vote_elem.find('resultado').text if vote_elem.find('resultado') is not None else 'Unknown',
+                    'details': vote_elem.find('detalhe').text if vote_elem.find('detalhe') is not None else None
+                }
+                
+                vote_obj, created = Vote.objects.get_or_create(
+                    date=vote_data['date'],
+                    result=vote_data['result'],
+                    details=vote_data['details']
+                )
+                votes.append(vote_obj)
+                self.stdout.write(f"Vote {'created' if created else 'retrieved'}: {vote_data['result']}")
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(f"Error creating vote: {str(e)}"))
+
+        # Parse votes under Comissao/Votacao
+        for vote_elem in proposal.findall('.//Comissao/Pt_gov_ar_objectos_iniciativas_ComissoesIniOut/Votacao/pt_gov_ar_objectos_VotacaoOut'):
+            try:
+                vote_data = {
+                    'date': vote_elem.find('data').text if vote_elem.find('data') is not None else None,
+                    'result': vote_elem.find('resultado').text if vote_elem.find('resultado') is not None else 'Unknown',
+                    'details': vote_elem.find('detalhe').text if vote_elem.find('detalhe') is not None else None
+                }
+                
+                vote_obj, created = Vote.objects.get_or_create(
+                    date=vote_data['date'],
+                    result=vote_data['result'],
+                    details=vote_data['details']
+                )
+                votes.append(vote_obj)
+                self.stdout.write(f"Vote {'created' if created else 'retrieved'}: {vote_data['result']}")
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(f"Error creating vote: {str(e)}"))
+
+        return votes
+
+    def parse_attachments(self, proposal):
+        """Parse all attachments from different locations in the XML."""
+        attachments = []
+        
+        # Parse initial attachments (IniAnexos)
+        for anexo in proposal.findall('.//IniAnexos/pt_gov_ar_objectos_iniciativas_AnexosOut'):
+            try:
+                name = anexo.find('anexoNome').text if anexo.find('anexoNome') is not None else 'Unnamed'
+                url = anexo.find('anexoFich').text if anexo.find('anexoFich') is not None else None
+                
+                if url:
+                    attachment_obj, created = Attachment.objects.get_or_create(
+                        name=name,
+                        file_url=url
+                    )
+                    attachments.append(attachment_obj)
+                    self.stdout.write(f"Initial attachment {'created' if created else 'retrieved'}: {name}")
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(f"Error creating initial attachment: {str(e)}"))
+
+        # Parse phase attachments (AnexosFase)
+        for anexo in proposal.findall('.//AnexosFase/pt_gov_ar_objectos_iniciativas_AnexosOut'):
+            try:
+                name = anexo.find('anexoNome').text if anexo.find('anexoNome') is not None else 'Unnamed'
+                url = anexo.find('anexoFich').text if anexo.find('anexoFich') is not None else None
+                
+                if url:
+                    attachment_obj, created = Attachment.objects.get_or_create(
+                        name=name,
+                        file_url=url
+                    )
+                    attachments.append(attachment_obj)
+                    self.stdout.write(f"Phase attachment {'created' if created else 'retrieved'}: {name}")
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(f"Error creating phase attachment: {str(e)}"))
+
+        # Parse commission documents (Documentos/DocsOut)
+        for doc in proposal.findall('.//Documentos/DocsOut'):
+            try:
+                name = doc.find('TituloDocumento').text if doc.find('TituloDocumento') is not None else 'Unnamed'
+                url = doc.find('URL').text if doc.find('URL') is not None else None
+                
+                if url:
+                    attachment_obj, created = Attachment.objects.get_or_create(
+                        name=name,
+                        file_url=url
+                    )
+                    attachments.append(attachment_obj)
+                    self.stdout.write(f"Document {'created' if created else 'retrieved'}: {name}")
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(f"Error creating document attachment: {str(e)}"))
+
+        return attachments
+
     def handle(self, *args, **kwargs):
         self.stdout.write("Starting import process...")
         
@@ -202,49 +300,17 @@ class Command(BaseCommand):
                 except Exception as e:
                     self.stdout.write(self.style.ERROR(f"Error creating phase: {str(e)}"))
 
-            # Handle votes
-            self.stdout.write("\nProcessing votes...")
-            votes = []
-            for vote in proposal.findall('.//Votacao'):
-                vote_date_elem = vote.find('data')
-                vote_result_elem = vote.find('resultado')
-                vote_details_elem = vote.find('detalhe')
-                vote_date = vote_date_elem.text if vote_date_elem is not None else None
-                vote_result = vote_result_elem.text if vote_result_elem is not None else 'Unknown'
-                vote_details = vote_details_elem.text if vote_details_elem is not None else None
-                try:
-                    vote_obj, created = Vote.objects.get_or_create(
-                        date=vote_date,
-                        result=vote_result,
-                        details=vote_details
-                    )
-                    votes.append(vote_obj)
-                    self.stdout.write(f"Vote {'created' if created else 'retrieved'}: {vote_result}")
-                except Exception as e:
-                    self.stdout.write(self.style.ERROR(f"Error creating vote: {str(e)}"))
+           
+            # Handle votes and attachments
 
-            # Handle related initiatives
-            self.stdout.write("\nProcessing related initiatives...")
-            related_initiatives = []
-            for related in proposal.findall('.//IniciativasConjuntas/Pt_gov_ar_objectos_iniciativas_IniciativasConjuntasOut'):
-                related_id_elem = related.find('id')
-                related_title_elem = related.find('titulo')
-                related_id = related_id_elem.text if related_id_elem is not None else None
-                related_title = related_title_elem.text if related_title_elem is not None else 'No Title'
-                if related_id:
-                    try:
-                        related_proposal, created = ProjetoLei.objects.get_or_create(
-                            external_id=related_id,
-                            defaults={'title': related_title, 'legislature': legislature}
-                        )
-                        related_initiatives.append(related_proposal)
-                        self.stdout.write(f"Related initiative {'created' if created else 'retrieved'}: {related_title}")
-                    except Exception as e:
-                        self.stdout.write(self.style.ERROR(f"Error creating related initiative: {str(e)}"))
+            attachments = self.parse_attachments(proposal)
+            votes = self.parse_votes(proposal)
+           
 
             try:
                 # Check if proposal exists
                 existing_proposal = ProjetoLei.objects.filter(external_id=external_id).first()
+
 
                 if existing_proposal:
                     # Update existing proposal
@@ -255,23 +321,21 @@ class Command(BaseCommand):
 
                     # Update relations
                     existing_proposal.authors.set(authors)
-                    existing_proposal.attachments.set(attachments)
+                    existing_proposal.attachments.set(attachments)  # Updated
                     existing_proposal.phases.set(phases)
-                    existing_proposal.votes.set(votes)
-                    existing_proposal.related_initiatives.set(related_initiatives)
+                    existing_proposal.votes.set(votes)  # Updated
                     
                     self.stdout.write(self.style.SUCCESS(f"Updated proposal: {data['title']}"))
                 else:
-# Create a new proposal
+                    # Create new proposal
                     self.stdout.write("\nCreating new proposal...")
                     new_proposal = ProjetoLei.objects.create(**data)
 
-                    # Set relations for new proposal
+                    # Set relations for new proposal including votes and attachments
                     new_proposal.authors.set(authors)
-                    new_proposal.attachments.set(attachments)
+                    new_proposal.attachments.set(attachments)  # Updated
                     new_proposal.phases.set(phases)
-                    new_proposal.votes.set(votes)
-                    new_proposal.related_initiatives.set(related_initiatives)
+                    new_proposal.votes.set(votes)  # Updated
                     
                     self.stdout.write(self.style.SUCCESS(f"Created proposal: {data['title']}"))
             except Exception as e:
