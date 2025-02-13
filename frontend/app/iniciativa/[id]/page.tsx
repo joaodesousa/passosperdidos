@@ -31,6 +31,7 @@ interface Vote {
 interface Attachment {
   url: string
   name: string
+  file_url: string
 }
 
 interface Proposal {
@@ -266,10 +267,10 @@ export default function ProposalDetails() {
                 {proposal.attachments.map((attachment, index) => (
                   <li key={index}>
                     <Button variant="link" asChild>
-                      <a href={attachment.url} target="_blank" rel="noopener noreferrer">
+                      <Link href={attachment.file_url} target="_blank" rel="noopener noreferrer">
                         <Download className="mr-2 h-4 w-4" />
                         {attachment.name}
-                      </a>
+                      </Link>
                     </Button>
                   </li>
                 ))}
