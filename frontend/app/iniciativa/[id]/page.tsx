@@ -305,69 +305,73 @@ export default function ProposalDetails() {
         </Card>
 
         {/* Votes Card */}
-        {proposal.votes.length > 0 && (
-          <Card className="mt-6">
-          <CardHeader>
-            <CardTitle className="text-xl">Resultados das Votações</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Accordion type="single" collapsible className="w-full">
-              {proposal.votes.map((result, index) => (
-                <AccordionItem key={index} value={`item-${index}`} >
-                  <AccordionTrigger>
-                    {result.date ? new Date(result.date).toLocaleDateString('pt-PT') : 'Data não disponível'} - {result.result}
-                  </AccordionTrigger>
-                  <AccordionContent>
-                  {result.details && <VoteTable details={result.details} />}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </CardContent>
-        </Card>
-        )}
+        <div className="flex flex-col">
+          {proposal.votes.length > 0 && (
+            <Card className="min-h-[250px]">
+              <CardHeader>
+                <CardTitle className="text-xl">Resultados das Votações</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Accordion type="single" collapsible className="w-full">
+                  {proposal.votes.map((result, index) => (
+                    <AccordionItem key={index} value={`item-${index}`} >
+                      <AccordionTrigger>
+                        {result.date ? new Date(result.date).toLocaleDateString('pt-PT') : 'Data não disponível'} - {result.result}
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        {result.details && <VoteTable details={result.details} />}
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </CardContent>
+            </Card>
+          )}
+        </div>
 
         {/* Attachments Card */}
-        <Card className="dark:bg-[#09090B]">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Paperclip className="mr-2 h-5 w-5" />
-              Anexos e Publicações
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {proposal.attachments.length > 0 ? (
-              <ul className="space-y-2">
-                {proposal.attachments.map((attachment, index) => (
-                  <li key={index}>
-                    <Button variant="link" asChild>
-                      <Link href={attachment.file_url} target="_blank" rel="noopener noreferrer">
-                        <Download className="mr-2 h-4 w-4" />
-                        {attachment.name}
-                      </Link>
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p>Nenhum anexo disponível.</p>
-            )}
-            {proposal.publication_url && (
-              <div className="mt-4">
-                <h3 className="font-semibold mb-2">Publicação:</h3>
-                <Button variant="link" asChild>
-                  <a href={proposal.publication_url} target="_blank" rel="noopener noreferrer">
-                    <FileText className="mr-2 h-4 w-4" />
-                    Ver publicação
-                  </a>
-                </Button>
-                {proposal.publication_date && (
-                  <p className="text-sm text-gray-500 mt-1">Data: {proposal.publication_date}</p>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <div className="flex flex-col">
+          <Card className="min-h-[250px] dark:bg-[#09090B]">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Paperclip className="mr-2 h-5 w-5" />
+                Anexos e Publicações
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {proposal.attachments.length > 0 ? (
+                <ul className="space-y-2">
+                  {proposal.attachments.map((attachment, index) => (
+                    <li key={index}>
+                      <Button variant="link" asChild>
+                        <Link href={attachment.file_url} target="_blank" rel="noopener noreferrer">
+                          <Download className="mr-2 h-4 w-4" />
+                          {attachment.name}
+                        </Link>
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>Nenhum anexo disponível.</p>
+              )}
+              {proposal.publication_url && (
+                <div className="mt-4">
+                  <h3 className="font-semibold mb-2">Publicação:</h3>
+                  <Button variant="link" asChild>
+                    <a href={proposal.publication_url} target="_blank" rel="noopener noreferrer">
+                      <FileText className="mr-2 h-4 w-4" />
+                      Ver publicação
+                    </a>
+                  </Button>
+                  {proposal.publication_date && (
+                    <p className="text-sm text-gray-500 mt-1">Data: {proposal.publication_date}</p>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div> 
     </div>
   )
