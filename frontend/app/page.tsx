@@ -82,7 +82,7 @@ async function fetchItems(params: {
     queryParams.append('end_date', format(params.dateRange.to, "yyyy-MM-dd"))
   }
 
-  const response = await fetch(`http://localhost:8000/projetoslei/?${queryParams}`, {
+  const response = await fetch(`https://legis.passosperdidos.pt/projetoslei/?${queryParams}`, {
     headers: { 'Authorization': `Bearer ${token}` },
   })
   return response.json()
