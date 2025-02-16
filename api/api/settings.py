@@ -95,7 +95,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 
 # Determine if running locally or in a deployed environment
-HOST = 'postgres' if socket.gethostname() != 'MacBookPro.lan' else '4.180.13.143'
+HOST = os.getenv("DATABASE_URL") if socket.gethostname() != 'MacBookPro.lan' else '4.180.13.143'
 
 DATABASES = {
     'default': {
@@ -103,7 +103,7 @@ DATABASES = {
         'NAME': os.getenv('POSTGRES_DB'),
         'USER': os.getenv('POSTGRES_USER'),
         'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
-        'HOST': HOST,  # Use 'postgres' in production, '4.180.13.143' locally
+        'HOST': HOST,
         'PORT': '5432',
     }
 }

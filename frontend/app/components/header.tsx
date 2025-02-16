@@ -9,7 +9,7 @@ export default function Header() {
       <div className="container mx-auto px-4 py-2 flex justify-between items-center">
         <div className="flex items-center space-x-2">
           <Image
-            src="https://i.ibb.co/sdTcRM4V/passosperdidos.png"
+            src="/passosperdidos.png"
             alt="Assembleia da República"
             width={100}
             height={100}
