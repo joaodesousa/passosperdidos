@@ -39,7 +39,7 @@ class PhaseListView(APIView):
 
 class ProjetoLeiViewSet(ReadOnlyModelViewSet):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
     queryset = ProjetoLei.objects.all().order_by('-date')
     serializer_class = ProjetoLeiSerializer
@@ -59,7 +59,7 @@ class ProjetoLeiViewSet(ReadOnlyModelViewSet):
         author_param = self.request.query_params.get('authors', None)
         if author_param:
             author_names = author_param.split(',')  # Support multiple authors
-            queryset = queryset.filter(authors__name__icontains=author_param)
+            queryset = queryset.filter(authors__name__in=author_names)  # Exact match for authors
         print("Author filter param:", author_param)
 
         # Handle phase filter
