@@ -4,8 +4,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import Header from "./components/header"
 import Footer from "./components/footer"
 import { Toaster } from "@/components/ui/toaster"
-import type React from "react" // Added import for React
-import { GoogleAnalytics } from '@next/third-parties/google'
+import type React from "react"
 
 
 const inter = Inter({ subsets: ["latin"] })
@@ -22,6 +21,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+      <script defer src="https://umami.outplay.pt/script.js" data-website-id="a1a24261-c30d-41be-8181-ece0b3befcab"></script>
+      </head>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <div className="min-h-screen bg-[#f8f9fa] dark:bg-[#09090B]">
@@ -31,7 +33,6 @@ export default function RootLayout({
           <Footer />
         </ThemeProvider>
       </body>
-      <GoogleAnalytics gaId="G-GV4Z39CNG3" />
     </html>
   )
 }
