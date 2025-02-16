@@ -11,8 +11,8 @@ import { GoogleAnalytics } from '@next/third-parties/google'
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata = {
-  title: "Passos Perdidos",
-  description: "Track executive actions and legislation in real-time",
+  title: "Passos Perdidos - Acompanhe as Iniciativas Legislativas da Assembleia da República",
+  description: "Passos Perdidos oferece uma visão detalhada e atualizada das iniciativas legislativas em curso na Assembleia da República de Portugal. Acompanhe a tramitação de propostas de lei, resoluções e outros projetos.",
 }
 
 export default function RootLayout({
