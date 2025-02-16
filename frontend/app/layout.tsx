@@ -22,7 +22,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-      <script defer src="https://umami.outplay.pt/script.js" data-website-id="a1a24261-c30d-41be-8181-ece0b3befcab"></script>
+      <script defer src="https://umami.outplay.pt/script.js" data-website-id="243b9f60-e688-4dd3-b346-f79700c6e926"></script>
       </head>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
