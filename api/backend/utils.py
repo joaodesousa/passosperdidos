@@ -28,7 +28,7 @@ def together_ai_request(prompt):
             {"role": "system", "content": "Você é um assistente que resume textos."},
             {"role": "user", "content": prompt}
         ],
-        "max_tokens": 200
+        "max_tokens": 300
     }
     response = requests.post(TOGETHER_API_URL, headers=HEADERS, json=payload)
     if response.status_code == 200:
@@ -42,11 +42,11 @@ def generate_summary(text):
     max_input_length = 30000  # Número de caracteres para evitar erro
     truncated_text = text[:max_input_length]
 
-    prompt_summary = f"Sumariza de forma simples o conteúdo desta proposta para ser de fácil entendimento pelo público: {truncated_text}. Não dês opinião sobre o conteúdo, sumariza apenas. Utiliza um tom imparcial, claro, e sucinto."
+    prompt_summary = f"Resume de forma simples o conteúdo desta proposta: {truncated_text}. Não dês opinião sobre o conteúdo, resume apenas. Utiliza um tom imparcial, claro, e sucinto."
     summary = together_ai_request(prompt_summary)
     
     # Traduzir para Português de Portugal, se necessário
-    prompt_translation = f"Traduza o seguinte texto para Português de Portugal: {summary}. Não utilizes Português do Brasil."
+    prompt_translation = f"Traduz o seguinte texto para Português de Portugal: {summary}. Não utilizes Português do Brasil."
     translated_summary = together_ai_request(prompt_translation)
     
     return translated_summary

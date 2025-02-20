@@ -237,9 +237,19 @@ export default function ProposalDetails() {
             </div>
           </div>
         </CardHeader>
+        <CardContent>
+          {proposal.link && (
+            <Button variant="outline" size="sm" asChild>
+              <a href={proposal.link} target="_blank" rel="noopener noreferrer">
+                <FileText className="mr-2 h-4 w-4" />
+                Ver texto completo
+              </a>
+            </Button>
+          )}
+        </CardContent>
       </Card>
 
-      <Card className="mb-8 dark:bg-[#09090B]">
+      {/* <Card className="mb-8 dark:bg-[#09090B]">
         <CardHeader>
           <div className="flex flex-col md:flex-row justify-between items-start mb-4">
             <div>
@@ -258,7 +268,7 @@ export default function ProposalDetails() {
             </Button>
           )}
         </CardContent>
-      </Card>
+      </Card> */}
 
       <div className="grid gap-8 md:grid-cols-2">
         {/* Timeline Card */}
