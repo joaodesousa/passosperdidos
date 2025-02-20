@@ -7,7 +7,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         # Pega todas as iniciativas da base de dados (pode ajustar a quantidade conforme necessário)
-        iniciativas = ProjetoLei.objects.all()[:1]  # Atualizei para pegar todas as iniciativas
+        iniciativas = ProjetoLei.objects.all()  # Atualizei para pegar todas as iniciativas
         
         total_iniciativas = len(iniciativas)
         self.stdout.write(f"Iniciando o processamento de {total_iniciativas} iniciativas...")

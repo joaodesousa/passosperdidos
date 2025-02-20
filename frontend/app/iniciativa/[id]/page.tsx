@@ -237,6 +237,17 @@ export default function ProposalDetails() {
             </div>
           </div>
         </CardHeader>
+      </Card>
+
+      <Card className="mb-8 dark:bg-[#09090B]">
+        <CardHeader>
+          <div className="flex flex-col md:flex-row justify-between items-start mb-4">
+            <div>
+              <CardTitle className="text-2xl font-bold mb-3">Resumo</CardTitle>
+              {proposal.description}
+            </div>
+          </div>
+        </CardHeader>
         <CardContent>
           {proposal.link && (
             <Button variant="outline" size="sm" asChild>
