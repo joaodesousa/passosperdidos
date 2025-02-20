@@ -244,7 +244,7 @@ export default function ProposalDetails() {
           <div className="flex flex-col md:flex-row justify-between items-start mb-4">
             <div>
               <CardTitle className="text-2xl font-bold mb-3">Resumo</CardTitle>
-              {proposal.description}
+              {proposal.description || "Resumo não disponível neste momento"}
             </div>
           </div>
         </CardHeader>
