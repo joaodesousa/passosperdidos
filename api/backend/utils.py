@@ -42,7 +42,7 @@ def generate_summary(text):
     max_input_length = 30000  # Número de caracteres para evitar erro
     truncated_text = text[:max_input_length]
 
-    prompt_summary = f"Explica de forma simples o conteúdo desta proposta para ser de fácil entendimento pelo público: {truncated_text}. Não dês opinião sobre o conteúdo, sumariza apenas o objectivo."
+    prompt_summary = f"Sumariza de forma simples o conteúdo desta proposta para ser de fácil entendimento pelo público: {truncated_text}. Não dês opinião sobre o conteúdo, sumariza apenas. Utiliza um tom imparcial, claro, e sucinto."
     summary = together_ai_request(prompt_summary)
     
     # Traduzir para Português de Portugal, se necessário
