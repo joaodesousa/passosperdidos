@@ -8,7 +8,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         # Pega todas as iniciativas da base de dados (limite de 1 para testes)
-        iniciativas = ProjetoLei.objects.all()[:1]
+        iniciativas = ProjetoLei.objects.filter(id=12)
 
         for iniciativa in iniciativas:
             url_pdf = iniciativa.link  

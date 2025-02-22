@@ -1,6 +1,7 @@
 import pdfplumber
 import requests
 import os
+import time
 
 # Função para baixar o PDF
 def download_pdf(url, local_path):
@@ -18,35 +19,50 @@ def extract_text_from_pdf(pdf_path):
                 text += page_text + " "  # Adiciona espaço para evitar palavras coladas
     return text.strip()
 
-# Função para interagir com a API do Together.AI
-def together_ai_request(prompt):
-    TOGETHER_API_URL = "https://api.together.xyz/v1/chat/completions"
-    HEADERS = {"Authorization": f"Bearer {os.getenv('TOGETHER_API_KEY')}", "Content-Type": "application/json"}
+# Função para interagir com a API do DeepSeek
+
+def deepseek_ai_request(prompt, max_retries=5):
+    DEEPSEEK_API_URL = "https://api.together.xyz/v1/chat/completions"
+    HEADERS = {
+        "Authorization": f"Bearer {os.getenv('TOGETHER_API_KEY')}",
+        "Content-Type": "application/json"
+    }
     payload = {
-        "model": "mistralai/Mistral-7B-Instruct-v0.1",
+        "model": "deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free",
         "messages": [
-            {"role": "system", "content": "Você é um assistente que resume textos."},
+            {"role": "system", "content": "Você é um assistente que resume textos. Forneça apenas o resumo, sem pensamentos adicionais."},
             {"role": "user", "content": prompt}
         ],
-        "max_tokens": 300
+        "max_tokens": 1000
     }
-    response = requests.post(TOGETHER_API_URL, headers=HEADERS, json=payload)
-    if response.status_code == 200:
-        return response.json()["choices"][0]["message"]["content"]
-    print("Erro na API:", response.status_code, response.text)  # Debugging
-    return "Erro ao processar a resposta."
 
-# Função para gerar o resumo usando a API do Together.AI
+    retries = 0
+    while retries < max_retries:
+        response = requests.post(DEEPSEEK_API_URL, headers=HEADERS, json=payload)
+        if response.status_code == 200:
+            summary = response.json()["choices"][0]["message"]["content"]
+            if "</think>" in summary:
+                return summary.split("</think>")[-1].strip()
+            return summary.strip()
+
+        elif response.status_code == 429:  # Rate limit hit
+            retry_after = int(response.headers.get("Retry-After", 5))  # Default wait time if not provided
+            print(f"Rate limit reached. Retrying after {retry_after} seconds...")
+            time.sleep(retry_after)
+            retries += 1
+        else:
+            print("Erro na API:", response.status_code, response.text)
+            break  # Stop on other errors
+
+    return "Erro ao processar a resposta após várias tentativas."
+
+# Função para gerar o resumo usando a API do DeepSeek
 def generate_summary(text):
     # Limitar o tamanho do texto para evitar erro
-    max_input_length = 30000  # Número de caracteres para evitar erro
+    max_input_length = 1000  # Número de caracteres para evitar erro
     truncated_text = text[:max_input_length]
 
     prompt_summary = f"Resume de forma simples o conteúdo desta proposta: {truncated_text}. Não dês opinião sobre o conteúdo, resume apenas. Utiliza um tom imparcial, claro, e sucinto."
-    summary = together_ai_request(prompt_summary)
-    
-    # Traduzir para Português de Portugal, se necessário
-    prompt_translation = f"Traduz o seguinte texto para Português de Portugal: {summary}. Não utilizes Português do Brasil."
-    translated_summary = together_ai_request(prompt_translation)
-    
-    return translated_summary
+    summary = deepseek_ai_request(prompt_summary)
+
+    return summary
