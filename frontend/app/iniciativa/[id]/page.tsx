@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { ArrowLeft, CalendarIcon, FileText, Check, Download, Users, Paperclip, Clock, Vote, Minus, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -249,12 +249,13 @@ export default function ProposalDetails() {
         </CardContent>
       </Card>
 
-      {/* <Card className="mb-8 dark:bg-[#09090B]">
+      <Card className="mb-8 dark:bg-[#09090B]">
         <CardHeader>
           <div className="flex flex-col md:flex-row justify-between items-start mb-4">
             <div>
               <CardTitle className="text-2xl font-bold mb-3">Resumo</CardTitle>
-              {proposal.description || "Resumo não disponível neste momento"}
+              <CardDescription className="mb-3">Resumo criado através do modelo DeepSeek R1 Distilled.</CardDescription>
+              <p className="text-justify">{proposal.description || "Resumo não disponível neste momento"}</p>
             </div>
           </div>
         </CardHeader>
@@ -268,7 +269,7 @@ export default function ProposalDetails() {
             </Button>
           )}
         </CardContent>
-      </Card> */}
+      </Card>
 
       <div className="grid gap-8 md:grid-cols-2">
         {/* Timeline Card */}
