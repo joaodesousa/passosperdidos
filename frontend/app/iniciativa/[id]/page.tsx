@@ -249,7 +249,7 @@ export default function ProposalDetails() {
         </CardContent>
       </Card>
 
-      <Card className="mb-8 dark:bg-[#09090B]">
+      {/* <Card className="mb-8 dark:bg-[#09090B]">
         <CardHeader>
           <div className="flex flex-col md:flex-row justify-between items-start mb-4">
             <div>
@@ -269,7 +269,7 @@ export default function ProposalDetails() {
             </Button>
           )}
         </CardContent>
-      </Card>
+      </Card> */}
 
       <div className="grid gap-8 md:grid-cols-2">
         {/* Timeline Card */}
