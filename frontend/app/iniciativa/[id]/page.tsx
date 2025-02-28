@@ -374,10 +374,10 @@ export default function ProposalDetails() {
                 <ul className="space-y-2">
                   {proposal.attachments.map((attachment, index) => (
                     <li key={index}>
-                      <Button variant="link" asChild>
+                      <Button variant="link" asChild className="h-auto whitespace-normal text-left justify-start">
                         <Link href={attachment.file_url} target="_blank" rel="noopener noreferrer">
-                          <Download className="mr-2 h-4 w-4" />
-                          {attachment.name}
+                          <Download className="mr-2 h-4 w-4 flex-shrink-0" />
+                          <span className="break-words">{attachment.name}</span>
                         </Link>
                       </Button>
                     </li>
