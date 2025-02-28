@@ -24,10 +24,18 @@ interface Phase {
   date: string
 }
 
+interface VoteParties {
+  contra: string[]
+  a_favor: string[]
+  abstencao: string[]
+}
+
 interface Vote {
   date: string | null
   result: string
   details: string | null
+  votes?: VoteParties
+  description?: string
 }
 
 interface Attachment {
@@ -152,6 +160,7 @@ export default function ProposalDetails() {
     }
   }
 
+  // This function is kept for backward compatibility with older vote records
   function parseVoteDetails(details: string): PartyVote[] {
     const votesByType: PartyVote[] = [];
     
@@ -179,22 +188,44 @@ export default function ProposalDetails() {
     return votesByType;
   }
 
-  const VoteTable = ({ details }: { details: string }) => {
-    const votesByType = parseVoteDetails(details);
+  // New function to convert the votes object to PartyVote array format
+  function convertVotesToPartyVotes(votes: VoteParties): PartyVote[] {
+    const partyVotes: PartyVote[] = [];
     
-    const renderVoteIcon = (vote: string) => {
-      switch (vote) {
-        case "A Favor":
-          return <Check className="h-4 w-4 text-green-500" />;
-        case "Contra":
-          return <X className="h-4 w-4 text-red-500" />;
-        case "Abstenção":
-          return <Minus className="h-4 w-4 text-yellow-500" />;
-        default:
-          return null;
-      }
-    };
-  
+    // Process "a_favor" votes
+    votes.a_favor?.forEach(party => {
+      partyVotes.push({ party, vote: "A Favor" });
+    });
+    
+    // Process "contra" votes
+    votes.contra?.forEach(party => {
+      partyVotes.push({ party, vote: "Contra" });
+    });
+    
+    // Process "abstencao" votes
+    votes.abstencao?.forEach(party => {
+      partyVotes.push({ party, vote: "Abstenção" });
+    });
+    
+    return partyVotes;
+  }
+
+  const VoteTable = ({ vote }: { vote: Vote }) => {
+    // Determine which data source to use
+    let votesByType: PartyVote[] = [];
+    
+    if (vote.votes) {
+      // Use the new votes object
+      votesByType = convertVotesToPartyVotes(vote.votes);
+    } else if (vote.details) {
+      // Fallback to parsing details
+      votesByType = parseVoteDetails(vote.details);
+    }
+    
+    if (votesByType.length === 0) {
+      return <p>Detalhes da votação não disponíveis.</p>;
+    }
+    
     return (
       <Table>
         <TableHeader>
@@ -204,12 +235,12 @@ export default function ProposalDetails() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {votesByType.map((vote, index) => (
+          {votesByType.map((partyVote, index) => (
             <TableRow key={index}>
-              <TableCell>{vote.party}</TableCell>
+              <TableCell>{partyVote.party}</TableCell>
               <TableCell className="flex items-center">
-                {renderVoteIcon(vote.vote)}
-                <span className="ml-2">{vote.vote}</span>
+                {renderVoteIcon(partyVote.vote)}
+                <span className="ml-2">{partyVote.vote}</span>
               </TableCell>
             </TableRow>
           ))}
@@ -217,7 +248,6 @@ export default function ProposalDetails() {
       </Table>
     );
   };
-
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -248,28 +278,6 @@ export default function ProposalDetails() {
           )}
         </CardContent>
       </Card>
-
-      {/* <Card className="mb-8 dark:bg-[#09090B]">
-        <CardHeader>
-          <div className="flex flex-col md:flex-row justify-between items-start mb-4">
-            <div>
-              <CardTitle className="text-2xl font-bold mb-3">Resumo</CardTitle>
-              <CardDescription className="mb-3">Resumo criado através do modelo DeepSeek R1 Distilled.</CardDescription>
-              <p className="text-justify">{proposal.description || "Resumo não disponível neste momento"}</p>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {proposal.link && (
-            <Button variant="outline" size="sm" asChild>
-              <a href={proposal.link} target="_blank" rel="noopener noreferrer">
-                <FileText className="mr-2 h-4 w-4" />
-                Ver texto completo
-              </a>
-            </Button>
-          )}
-        </CardContent>
-      </Card> */}
 
       <div className="grid gap-8 md:grid-cols-2">
         {/* Timeline Card */}
@@ -335,13 +343,14 @@ export default function ProposalDetails() {
               </CardHeader>
               <CardContent>
                 <Accordion type="single" collapsible className="w-full">
-                  {proposal.votes.map((result, index) => (
+                  {proposal.votes.map((voteResult, index) => (
                     <AccordionItem key={index} value={`item-${index}`} >
                       <AccordionTrigger>
-                        {result.date ? new Date(result.date).toLocaleDateString('pt-PT') : 'Data não disponível'} - {result.result}
+                        {voteResult.date ? new Date(voteResult.date).toLocaleDateString('pt-PT') : 'Data não disponível'} - {voteResult.result}
+                        {voteResult.description && ` - ${voteResult.description}`}
                       </AccordionTrigger>
                       <AccordionContent>
-                        {result.details && <VoteTable details={result.details} />}
+                        <VoteTable vote={voteResult} />
                       </AccordionContent>
                     </AccordionItem>
                   ))}

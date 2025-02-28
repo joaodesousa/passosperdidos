@@ -42,6 +42,8 @@ class Vote(models.Model):
     date = models.DateField(null=True)
     result = models.CharField(max_length=50)
     details = models.TextField(null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
+    votes = models.JSONField(default=dict)
 
     def __str__(self):
         return f"{self.date} - {self.result}"

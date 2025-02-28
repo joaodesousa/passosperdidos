@@ -3,54 +3,123 @@ from xml.etree import ElementTree
 from django.core.management.base import BaseCommand
 from backend.models import ProjetoLei, Phase, Author, Attachment, Vote, Legislature
 from datetime import datetime
-
+import re
 
 class Command(BaseCommand):
     help = 'Fetches proposals from an XML URL and stores them in the database'
 
     def parse_votes(self, proposal):
-        """Parse all votes from different locations in the XML."""
         votes = []
         
         # Parse direct votes under IniEventos/Votacao
         for vote_elem in proposal.findall('.//IniEventos/Pt_gov_ar_objectos_iniciativas_EventosOut/Votacao/pt_gov_ar_objectos_VotacaoOut'):
             try:
-                vote_data = {
-                    'date': vote_elem.find('data').text if vote_elem.find('data') is not None else None,
-                    'result': vote_elem.find('resultado').text if vote_elem.find('resultado') is not None else 'Unknown',
-                    'details': vote_elem.find('detalhe').text if vote_elem.find('detalhe') is not None else None
-                }
+                date = vote_elem.find('data').text if vote_elem.find('data') is not None else None
+                result = vote_elem.find('resultado').text if vote_elem.find('resultado') is not None else 'Unknown'
+                details = vote_elem.find('detalhe').text if vote_elem.find('detalhe') is not None else None
+                description = vote_elem.find('descricao').text if vote_elem.find('descricao') is not None else None
+                
+                # Parse the HTML details into JSON structure
+                votes_json = self.parse_vote_details_to_json(details)
                 
                 vote_obj, created = Vote.objects.get_or_create(
-                    date=vote_data['date'],
-                    result=vote_data['result'],
-                    details=vote_data['details']
+                    date=date,
+                    result=result,
+                    details=details,  # Keep the original for reference
+                    defaults={
+                        'votes': votes_json,  # Add the parsed JSON
+                        'description': description  # Add the description
+                    }
                 )
+                
+                # Update the votes field if the record already existed
+                if not created:
+                    if votes_json:
+                        vote_obj.votes = votes_json
+                    if description:
+                        vote_obj.description = description
+                    vote_obj.save()
+                    
                 votes.append(vote_obj)
-                self.stdout.write(f"Vote {'created' if created else 'retrieved'}: {vote_data['result']}")
+                self.stdout.write(f"Vote {'created' if created else 'retrieved'}: {result}")
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f"Error creating vote: {str(e)}"))
 
         # Parse votes under Comissao/Votacao
         for vote_elem in proposal.findall('.//Comissao/Pt_gov_ar_objectos_iniciativas_ComissoesIniOut/Votacao/pt_gov_ar_objectos_VotacaoOut'):
             try:
-                vote_data = {
-                    'date': vote_elem.find('data').text if vote_elem.find('data') is not None else None,
-                    'result': vote_elem.find('resultado').text if vote_elem.find('resultado') is not None else 'Unknown',
-                    'details': vote_elem.find('detalhe').text if vote_elem.find('detalhe') is not None else None
-                }
+                date = vote_elem.find('data').text if vote_elem.find('data') is not None else None
+                result = vote_elem.find('resultado').text if vote_elem.find('resultado') is not None else 'Unknown'
+                details = vote_elem.find('detalhe').text if vote_elem.find('detalhe') is not None else None
+                description = vote_elem.find('descricao').text if vote_elem.find('descricao') is not None else None
+                
+                # Parse the HTML details into JSON structure
+                votes_json = self.parse_vote_details_to_json(details)
                 
                 vote_obj, created = Vote.objects.get_or_create(
-                    date=vote_data['date'],
-                    result=vote_data['result'],
-                    details=vote_data['details']
+                    date=date,
+                    result=result,
+                    details=details,  # Keep the original for reference
+                    defaults={
+                        'votes': votes_json,  # Add the parsed JSON
+                        'description': description  # Add the description
+                    }
                 )
+                
+                # Update the votes field if the record already existed
+                if not created:
+                    if votes_json:
+                        vote_obj.votes = votes_json
+                    if description:
+                        vote_obj.description = description
+                    vote_obj.save()
+                    
                 votes.append(vote_obj)
-                self.stdout.write(f"Vote {'created' if created else 'retrieved'}: {vote_data['result']}")
+                self.stdout.write(f"Vote {'created' if created else 'retrieved'}: {result}")
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f"Error creating vote: {str(e)}"))
 
         return votes
+
+    def parse_vote_details_to_json(self, details):
+        """Parse HTML vote details into a structured JSON format."""
+        if not details:
+            return {}
+        
+        result = {
+            "a_favor": [],
+            "contra": [],
+            "abstencao": []
+        }
+        
+        try:
+            # Split by <BR> tags to separate vote categories
+            sections = details.split('<BR>')
+            
+            for section in sections:
+                if 'A Favor:' in section:
+                    parties = self.extract_parties(section.split('A Favor:')[1])
+                    result["a_favor"] = parties
+                elif 'Contra:' in section:
+                    parties = self.extract_parties(section.split('Contra:')[1])
+                    result["contra"] = parties
+                elif 'Abstenção:' in section:
+                    parties = self.extract_parties(section.split('Abstenção:')[1])
+                    result["abstencao"] = parties
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f"Error parsing vote details: {str(e)}"))
+        
+        return result
+
+    def extract_parties(self, html_text):
+        """Extract party names from HTML formatted text."""
+
+        
+        # Find all text between <I> and </I> tags
+        parties = re.findall(r'<I>\s*(.*?)\s*</I>', html_text)
+        
+        # Clean up party names
+        return [party.strip() for party in parties]
 
     def parse_attachments(self, proposal):
         """Parse all attachments from different locations in the XML."""

@@ -5,7 +5,7 @@ from .models import ProjetoLei, Phase, Vote, Author, Attachment, Legislature
 class VoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vote
-        fields = ['date', 'result', 'details']  # Include necessary fields
+        fields = ['date', 'result', 'description', 'votes']  # Include necessary fields
 
 
 class AuthorSerializer(serializers.ModelSerializer):
