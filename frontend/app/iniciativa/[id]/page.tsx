@@ -337,7 +337,7 @@ export default function ProposalDetails() {
         {/* Votes Card */}
         <div className="flex flex-col">
           {proposal.votes.length > 0 && (
-            <Card className="min-h-[250px]">
+            <Card className="min-h-[250px] dark:bg-[#09090B]">
               <CardHeader>
                 <CardTitle className="text-xl">Resultados das Votações</CardTitle>
               </CardHeader>
