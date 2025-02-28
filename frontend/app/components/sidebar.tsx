@@ -78,15 +78,15 @@ export function Sidebar({
               <h3 className="text-sm font-medium mb-2">Fase</h3>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between">
+                  <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between dark:bg-[#09090B]">
                     {selectedPhases[0] || "Selecione fases..."}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[200px] p-0" align="start">
-                  <Command className="w-full">
-                    <CommandInput placeholder="Pesquisar fases..." />
-                    <CommandList>
+                <PopoverContent className="w-[200px] p-0 dark:bg-[#09090B]" align="start">
+                  <Command className="w-full dark:bg-[#09090B]">
+                    <CommandInput placeholder="Pesquisar fases..." className="dark:bg-[#09090B]" />
+                    <CommandList className="dark:bg-[#09090B]">
                       <CommandEmpty>Nenhuma fase encontrada.</CommandEmpty>
                       <CommandGroup>
                         {allPhases.map((phase) => (
@@ -114,17 +114,17 @@ export function Sidebar({
               <h3 className="text-sm font-medium mb-2">Autor</h3>
               <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between">
+                  <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between dark:bg-[#09090B]">
                     {authorValue ? allAuthors.find((author) => author === authorValue) : "Selecione autores..."}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[200px] p-0" align="start">
-                  <Command className="w-full">
-                    <CommandInput placeholder="Pesquisar autores..." />
+                <PopoverContent className="w-[200px] p-0 dark:bg-[#09090B]" align="start">
+                  <Command className="w-full dark:bg-[#09090B]">
+                    <CommandInput placeholder="Pesquisar autores..." className="dark:bg-[#09090B]" />
                     <CommandList>
                       <CommandEmpty>Nenhum autor encontrado.</CommandEmpty>
-                      <CommandGroup>
+                      <CommandGroup className="dark:bg-[#09090B]">
                         {allAuthors.map((author) => (
                           <CommandItem
                             key={author}
