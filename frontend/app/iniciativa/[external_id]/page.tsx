@@ -13,6 +13,7 @@ export async function generateMetadata(
   // Instead of defining a static title here,
   // let the DetailContent component handle the title with useEffect
   
+  
   // Return a minimal metadata object
   // The title will be set on the client side
   return {

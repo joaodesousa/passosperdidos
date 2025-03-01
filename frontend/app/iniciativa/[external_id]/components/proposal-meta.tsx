@@ -1,3 +1,4 @@
+// frontend/app/iniciativa/[external_id]/components/proposal-meta.tsx
 import { Metadata } from 'next';
 import { Proposal } from '../../../../lib/types';
 
@@ -17,8 +18,8 @@ export function generateProposalMeta(proposal: Proposal): Metadata {
   // Create the canonical URL
   const canonicalUrl = `${baseUrl}/iniciativa/${proposal.external_id}`;
   
-  // Create the OG image URL
-  const ogImageUrl = `${baseUrl}/api/og/${proposal.external_id}`;
+  // Create a simple OG image URL using query parameters for the simplified API
+  const ogImageUrl = `${baseUrl}/api/og?title=${encodeURIComponent(proposal.title)}&subtitle=${encodeURIComponent(proposal.type)}`;
 
   return {
     title,
