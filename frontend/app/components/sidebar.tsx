@@ -128,11 +128,11 @@ export function Sidebar({
     onClearAllFilters() 
   }
   
-  // Group authors by author_type
+  // Group authors by author_type with special handling for deputies
   const groupedAuthors = useMemo(() => {
     if (!allAuthors || !Array.isArray(allAuthors)) return {};
 
-    return allAuthors.reduce((acc, author) => {
+    const grouped = allAuthors.reduce((acc, author) => {
       const authorType = author.author_type || "Outro";
       if (!acc[authorType]) {
         acc[authorType] = [];
@@ -140,6 +140,27 @@ export function Sidebar({
       acc[authorType].push(author);
       return acc;
     }, {} as Record<string, Author[]>);
+    
+    // Special handling for deputies - sort by party and then by name
+    if (grouped['Deputado']) {
+      grouped['Deputado'].sort((a, b) => {
+        // First sort by party (null parties at the end)
+        if (a.party && b.party) {
+          if (a.party !== b.party) {
+            return a.party.localeCompare(b.party);
+          }
+        } else if (a.party) {
+          return -1; // a has party but b doesn't, a comes first
+        } else if (b.party) {
+          return 1;  // b has party but a doesn't, b comes first
+        }
+        
+        // Then sort by name within the same party
+        return a.name.localeCompare(b.name);
+      });
+    }
+    
+    return grouped;
   }, [allAuthors]);
 
   // Filter authors based on search
