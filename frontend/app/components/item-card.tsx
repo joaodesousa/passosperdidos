@@ -25,7 +25,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item }) => {
   const currentUrlParams = new URLSearchParams(searchParams.toString())
   
   // Build the detail link with preserved state
-  const detailLink = `/iniciativa/${item.id}?returnTo=${encodeURIComponent(
+  const detailLink = `/iniciativa/${item.external_id}?returnTo=${encodeURIComponent(
     window.location.pathname + "?" + currentUrlParams.toString()
   )}`
 

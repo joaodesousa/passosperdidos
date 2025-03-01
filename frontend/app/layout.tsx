@@ -3,7 +3,7 @@ import { Inter } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
 import Header from "./components/header"
 import Footer from "./components/footer"
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster } from 'sonner';
 import type React from "react"
 
 
@@ -29,6 +29,7 @@ export default function RootLayout({
           <div className="min-h-screen bg-[#f8f9fa] dark:bg-[#09090B]">
             <Header />
             {children}
+            <Toaster position="top-right" />
           </div>
           <Footer />
         </ThemeProvider>

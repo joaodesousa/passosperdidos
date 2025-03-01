@@ -41,7 +41,7 @@ class ProjetoLeiViewSet(ReadOnlyModelViewSet):
     queryset = ProjetoLei.objects.all().order_by('-date')
     serializer_class = ProjetoLeiSerializer
     filter_backends = [SearchFilter, DjangoFilterBackend]
-    search_fields = ['title', 'id']
+    search_fields = ['title', 'external_id']
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -93,9 +93,9 @@ class ProjetoLeiViewSet(ReadOnlyModelViewSet):
                 pass
 
         # Handle id filter
-        id_param = self.request.query_params.get('id', None)
+        id_param = self.request.query_params.get('external_id', None)
         if id_param:
             id_param = id_param.split(',')
-            queryset = queryset.filter(id__in=id_param)
+            queryset = queryset.filter(external_id__in=id_param)
 
         return queryset
