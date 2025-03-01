@@ -115,14 +115,19 @@ export async function fetchAuthors(): Promise<Author[]> {
     
     // Fetch all pages of authors
     while (nextPage) {
-      const response: Response = await fetch(nextPage)
+      // Ensure HTTPS is always used by replacing http with https
+      const secureUrl = nextPage.replace('http://', 'https://');
+      
+      const response: Response = await fetch(secureUrl)
       if (!response.ok) {
         throw new Error(`API error: ${response.statusText}`)
       }
       
       const data = await response.json()
       allAuthors = [...allAuthors, ...data.results]
-      nextPage = data.next
+      
+      // Ensure next page URL also uses HTTPS
+      nextPage = data.next ? data.next.replace('http://', 'https://') : null
     }
     
     return allAuthors

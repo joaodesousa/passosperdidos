@@ -136,7 +136,7 @@ export function ShareButton({
           <>
             <DropdownMenuItem onClick={handleNativeShare} className="cursor-pointer">
               <Share2 className="mr-2 h-4 w-4" />
-              <span>Partilhar nativamente</span>
+              <span>Partilhar</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
           </>
