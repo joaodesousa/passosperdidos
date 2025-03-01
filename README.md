@@ -2,8 +2,6 @@
 
 Uma aplicação web moderna para acompanhar iniciativas legislativas em Portugal, construída com Next.js, React e Tailwind CSS.
 
-![Passos Perdidos Screenshot](screenshot.png)
-
 ## Sobre o Projeto
 
 Passos Perdidos fornece uma interface amigável para navegar, pesquisar e acompanhar propostas legislativas. A plataforma oferece opções abrangentes de filtragem, visualizações detalhadas das iniciativas e informações atualizadas sobre o estado de projetos de lei e propostas.
