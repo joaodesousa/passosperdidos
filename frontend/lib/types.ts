@@ -66,6 +66,7 @@ export interface PartyVote {
 }
 
 export interface Item {
+  id: number;
   external_id: string;
   title: string;
   type: string;

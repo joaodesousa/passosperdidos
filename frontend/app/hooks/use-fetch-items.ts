@@ -1,10 +1,19 @@
-// Update your useFetchItems.ts hook
+// Updated useFetchItems.ts hook
 
-import { useState, useEffect, useCallback, useMemo } from "react"
-import { FilterState, Item, Author } from "@/lib/types"
+import { useState, useEffect, useCallback, useMemo, useRef } from "react"
+import { Item, Author } from "@/lib/types"
 import { fetchItems, fetchTypes, fetchPhases, fetchAuthors } from "@/lib/api"
+import type { DateRange } from "react-day-picker"
 
-export function useFetchItems(page: number, searchTerm: string, filters: FilterState) {
+// Define the filter structure here to match what's used in the app
+type FiltersType = {
+  types: string[];
+  phases: string[];
+  authors: string[];
+  dateRange: DateRange | undefined;
+}
+
+export function useFetchItems(page: number, searchTerm: string, filters: FiltersType) {
   const [items, setItems] = useState<Item[]>([])
   const [totalPages, setTotalPages] = useState(1)
   const [isLoading, setIsLoading] = useState(true)
@@ -13,6 +22,23 @@ export function useFetchItems(page: number, searchTerm: string, filters: FilterS
   const [allPhases, setAllPhases] = useState<string[]>(["Todas"])
   const [allAuthors, setAllAuthors] = useState<Author[]>([])
   const [isMetadataLoading, setIsMetadataLoading] = useState(true)
+  
+  // Keep track of previous search term to detect changes
+  const prevSearchTermRef = useRef(searchTerm)
+  // Store safe page number that gets reset when search changes
+  const [safePage, setSafePage] = useState(page)
+
+  // Update safe page when search term changes
+  useEffect(() => {
+    if (prevSearchTermRef.current !== searchTerm) {
+      // Search term has changed, reset to page 1
+      setSafePage(1)
+      prevSearchTermRef.current = searchTerm
+    } else {
+      // No search term change, use the provided page
+      setSafePage(page)
+    }
+  }, [page, searchTerm])
 
   // Extract unique author names for the filter UI
   const authorNames = useMemo(() => {
@@ -42,14 +68,14 @@ export function useFetchItems(page: number, searchTerm: string, filters: FilterS
     }
   }, [])
 
-  // Fetch items based on page, search and filters
+  // Fetch items based on safePage (not direct page), search and filters
   const fetchItemsData = useCallback(async () => {
     setIsLoading(true)
     setError(null)
     
     try {
       const data = await fetchItems({
-        page,
+        page: safePage, // Use the safe page number here
         search: searchTerm,
         types: filters.types,
         phases: filters.phases,
@@ -65,7 +91,7 @@ export function useFetchItems(page: number, searchTerm: string, filters: FilterS
     } finally {
       setIsLoading(false)
     }
-  }, [page, searchTerm, filters])
+  }, [safePage, searchTerm, filters]) // Use safePage in the dependency array
 
   // Load metadata on initial render
   useEffect(() => {
@@ -87,6 +113,7 @@ export function useFetchItems(page: number, searchTerm: string, filters: FilterS
     authorNames, 
     allAuthors, 
     isMetadataLoading,
-    refetch: fetchItemsData
+    refetch: fetchItemsData,
+    currentPage: safePage // Return the safePage rather than the original page
   }
 }

@@ -58,7 +58,7 @@ export async function fetchItems(params: {
       queryParams.append('end_date', format(params.dateRange.to, "yyyy-MM-dd"))
     }
 
-    const response = await fetch(`https://legis.passosperdidos.pt/projetoslei/?${queryParams}`, {
+    const response: Response = await fetch(`https://legis.passosperdidos.pt/projetoslei/?${queryParams}`, {
       headers: { 'Authorization': `Bearer ${token}` },
     })
     
@@ -78,7 +78,7 @@ export async function fetchItems(params: {
  */
 export async function fetchTypes(): Promise<string[]> {
   try {
-    const response = await fetch(`https://legis.passosperdidos.pt/types/`)
+    const response: Response = await fetch(`https://legis.passosperdidos.pt/types/`)
     if (!response.ok) {
       throw new Error(`API error: ${response.statusText}`)
     }
@@ -94,7 +94,7 @@ export async function fetchTypes(): Promise<string[]> {
  */
 export async function fetchPhases(): Promise<string[]> {
   try {
-    const response = await fetch(`https://legis.passosperdidos.pt/phases/`)
+    const response: Response = await fetch(`https://legis.passosperdidos.pt/phases/`)
     if (!response.ok) {
       throw new Error(`API error: ${response.statusText}`)
     }
@@ -115,7 +115,7 @@ export async function fetchAuthors(): Promise<Author[]> {
     
     // Fetch all pages of authors
     while (nextPage) {
-      const response = await fetch(nextPage)
+      const response: Response = await fetch(nextPage)
       if (!response.ok) {
         throw new Error(`API error: ${response.statusText}`)
       }

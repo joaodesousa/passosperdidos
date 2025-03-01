@@ -2,7 +2,7 @@
 
 import { Suspense } from 'react'
 import Loading from './loading'
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useState, useMemo, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,7 +16,6 @@ import { LoadingSkeleton, LoadingCardsSkeleton, LoadingPaginationSkeleton } from
 import { useUrlState } from "./hooks/use-url-state"
 import { useFetchItems } from "./hooks/use-fetch-items"
 import { useDebounce } from "./hooks/use-debounce"
-import { FilterState } from "../lib/types"
 import type { DateRange } from "react-day-picker"
 
 // Main component that uses search params
@@ -34,7 +33,7 @@ function HomeContent() {
     dateRange: DateRange | undefined
   ) => {
     setFilters({ types, phases, authors, dateRange })
-    setCurrentPage(1)
+    setCurrentPage(1) // Reset to page 1 when filters change
   }
 
   const clearAllFilters = () => {
@@ -58,7 +57,7 @@ function HomeContent() {
   // State
   const [currentPage, setCurrentPage] = useState(initialPage)
   const [searchTerm, setSearchTerm] = useState(initialSearch)
-  const [filters, setFilters] = useState<FilterState>(initialFilters)
+  const [filters, setFilters] = useState(initialFilters)
   const [isFirstLoad, setIsFirstLoad] = useState(true)
   
   // Apply debouncing to search to prevent excessive API calls
@@ -117,6 +116,24 @@ function HomeContent() {
     }
   }, [urlState])
 
+  // Effect to watch for search term changes and reset pagination
+  const prevSearchRef = useRef(searchTerm)
+  useEffect(() => {
+    // Skip on initial load
+    if (!isFirstLoad && prevSearchRef.current !== searchTerm) {
+      // Search term changed, reset to page 1
+      setCurrentPage(1)
+    }
+    prevSearchRef.current = searchTerm
+  }, [searchTerm, isFirstLoad])
+
+  // Handle search form submission
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    // Nothing needs to be done here as we're using the effect above
+    // to detect search changes and reset pagination
+  }
+
   // Render main component
   return (
     <main className="container mx-auto px-4 py-6">
@@ -149,14 +166,16 @@ function HomeContent() {
             {isMetadataLoading ? (
               <LoadingSkeleton />
             ) : (
-              <Input
-                type="search"
-                placeholder="Pesquisar..."
-                className="dark:bg-[#09090B] flex-1"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                aria-label="Pesquisar iniciativas legislativas"
-              />
+              <form onSubmit={handleSearchSubmit} className="flex-1">
+                <Input
+                  type="search"
+                  placeholder="Pesquisar..."
+                  className="dark:bg-[#09090B] w-full"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  aria-label="Pesquisar iniciativas legislativas"
+                />
+              </form>
             )}
 
             {/* Mobile filter sheet */}
