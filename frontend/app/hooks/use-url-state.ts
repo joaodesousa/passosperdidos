@@ -1,3 +1,5 @@
+"use client"
+
 import { useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import type { DateRange } from "react-day-picker"
@@ -8,15 +10,15 @@ export function useUrlState() {
   const searchParams = useSearchParams()
   
   // Get initial values from URL
-  const getInitialPage = (): number => {
+  const getInitialPage = useCallback((): number => {
     return parseInt(searchParams.get('page') || '1')
-  }
+  }, [searchParams])
   
-  const getInitialSearch = (): string => {
+  const getInitialSearch = useCallback((): string => {
     return searchParams.get('search') || ""
-  }
+  }, [searchParams])
   
-  const getInitialFilters = (): FilterState => {
+  const getInitialFilters = useCallback((): FilterState => {
     const initialTypes = searchParams.get('types')?.split(',') || []
     const initialPhases = searchParams.get('phases')?.split(',') || []
     const initialAuthors = searchParams.get('authors')?.split(',') || []
@@ -39,12 +41,12 @@ export function useUrlState() {
       authors: initialAuthors,
       dateRange: initialDateRange,
     }
-  }
+  }, [searchParams])
   
   // Check if we're returning from details page
-  const getReturnPath = (): string | null => {
+  const getReturnPath = useCallback((): string | null => {
     return searchParams.get('returnTo')
-  }
+  }, [searchParams])
   
   // Update URL based on current state
   const updateUrl = useCallback((params: {

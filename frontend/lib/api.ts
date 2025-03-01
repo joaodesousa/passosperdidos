@@ -1,6 +1,6 @@
 import { format } from "date-fns"
 import type { DateRange } from "react-day-picker"
-import { ApiResponse } from "./types"
+import { ApiResponse, Author } from "./types"
 
 /**
  * Get auth token from the API
@@ -108,13 +108,24 @@ export async function fetchPhases(): Promise<string[]> {
 /**
  * Fetch available authors
  */
-export async function fetchAuthors(): Promise<string[]> {
+export async function fetchAuthors(): Promise<Author[]> {
   try {
-    const response = await fetch(`https://legis.passosperdidos.pt/authors/`)
-    if (!response.ok) {
-      throw new Error(`API error: ${response.statusText}`)
+    let allAuthors: Author[] = []
+    let nextPage: string | null = 'https://legis.passosperdidos.pt/authors/'
+    
+    // Fetch all pages of authors
+    while (nextPage) {
+      const response = await fetch(nextPage)
+      if (!response.ok) {
+        throw new Error(`API error: ${response.statusText}`)
+      }
+      
+      const data = await response.json()
+      allAuthors = [...allAuthors, ...data.results]
+      nextPage = data.next
     }
-    return response.json()
+    
+    return allAuthors
   } catch (error) {
     console.error("Error fetching authors:", error)
     throw error

@@ -29,3 +29,9 @@ export interface ApiResponse {
   previous: string | null
   results: Item[]
 }
+
+export interface Author {
+  name: string
+  party: string | null
+  author_type: "Grupo" | "Deputado" | "Outro"
+}

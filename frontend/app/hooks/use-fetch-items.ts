@@ -1,5 +1,7 @@
-import { useState, useEffect, useCallback } from "react"
-import { FilterState, Item } from "@/lib/types"
+// Update your useFetchItems.ts hook
+
+import { useState, useEffect, useCallback, useMemo } from "react"
+import { FilterState, Item, Author } from "@/lib/types"
 import { fetchItems, fetchTypes, fetchPhases, fetchAuthors } from "@/lib/api"
 
 export function useFetchItems(page: number, searchTerm: string, filters: FilterState) {
@@ -9,8 +11,15 @@ export function useFetchItems(page: number, searchTerm: string, filters: FilterS
   const [error, setError] = useState<string | null>(null)
   const [allTypes, setAllTypes] = useState<string[]>([])
   const [allPhases, setAllPhases] = useState<string[]>(["Todas"])
-  const [allAuthors, setAllAuthors] = useState<string[]>([])
+  const [allAuthors, setAllAuthors] = useState<Author[]>([])
   const [isMetadataLoading, setIsMetadataLoading] = useState(true)
+
+  // Extract unique author names for the filter UI
+  const authorNames = useMemo(() => {
+    const names = allAuthors.map(author => author.name);
+    // Remove duplicates
+    return [...new Set(names)];
+  }, [allAuthors]);
 
   // Fetch metadata (types, phases, authors)
   const fetchMetadata = useCallback(async () => {
@@ -75,7 +84,8 @@ export function useFetchItems(page: number, searchTerm: string, filters: FilterS
     totalPages,
     allTypes,
     allPhases,
-    allAuthors,
+    authorNames, // Return author names for the UI
+    allAuthors,  // Also return the full author objects if needed
     isMetadataLoading,
     refetch: fetchItemsData
   }

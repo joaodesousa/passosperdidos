@@ -1,13 +1,15 @@
 "use client"
 
+import { Suspense } from 'react'
+import Loading from './loading'
 import { useEffect, useState, useMemo } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Card, CardContent } from "@/components/ui/card"
 import { PaginationControls } from "./components/pagination"
-import { Sidebar } from "./components/sidebar" // Make sure path is correct
+import { Sidebar } from "./components/sidebar"
 import { ItemCard } from "./components/item-card"
 import { DateRangeSelector } from "./components/date-range-selector"
 import { LoadingSkeleton, LoadingCardsSkeleton, LoadingPaginationSkeleton } from "./components/loading-skeletons"
@@ -17,7 +19,8 @@ import { useDebounce } from "./hooks/use-debounce"
 import { FilterState } from "../lib/types"
 import type { DateRange } from "react-day-picker"
 
-export default function Home() {
+// Main component that uses search params
+function HomeContent() {
   // Handler functions
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
@@ -128,14 +131,14 @@ export default function Home() {
           allPhases={allPhases}
           selectedPhases={filters.phases}
           onPhasesChange={(phases) => handleFilterChange(filters.types, phases, filters.authors, filters.dateRange)}
-          allAuthors={allAuthors}
+          allAuthors={allAuthors} 
           selectedAuthors={filters.authors}
           onAuthorsChange={(authors) => handleFilterChange(filters.types, filters.phases, authors, filters.dateRange)}
           date={filters.dateRange}
           onDateChange={(dateRange) => handleFilterChange(filters.types, filters.phases, filters.authors, dateRange)}
           onClearDate={() => handleFilterChange(filters.types, filters.phases, filters.authors, undefined)}
           onClearAllFilters={clearAllFilters}
-          isMobile={false} // Flag this as desktop sidebar
+          isMobile={false} 
         />
       </div>
 
@@ -164,26 +167,26 @@ export default function Home() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-[280px] sm:w-[340px] dark:bg-[#09090B]">
-              <div className="py-4">
-                <Sidebar
-                  isLoading={isMetadataLoading}
-                  allTypes={allTypes}
-                  selectedTypes={filters.types}
-                  onTypesChange={(types) => handleFilterChange(types, filters.phases, filters.authors, filters.dateRange)}
-                  allPhases={allPhases}
-                  selectedPhases={filters.phases}
-                  onPhasesChange={(phases) => handleFilterChange(filters.types, phases, filters.authors, filters.dateRange)}
-                  allAuthors={allAuthors}
-                  selectedAuthors={filters.authors}
-                  onAuthorsChange={(authors) => handleFilterChange(filters.types, filters.phases, authors, filters.dateRange)}
-                  date={filters.dateRange}
-                  onDateChange={(dateRange) => handleFilterChange(filters.types, filters.phases, filters.authors, dateRange)}
-                  onClearDate={() => handleFilterChange(filters.types, filters.phases, filters.authors, undefined)}
-                  onClearAllFilters={clearAllFilters}
-                  isMobile={true} // Flag this as mobile sidebar
-                />
-              </div>
-            </SheetContent>
+                <div className="py-4">
+                  <Sidebar
+                    isLoading={isMetadataLoading}
+                    allTypes={allTypes}
+                    selectedTypes={filters.types}
+                    onTypesChange={(types) => handleFilterChange(types, filters.phases, filters.authors, filters.dateRange)}
+                    allPhases={allPhases}
+                    selectedPhases={filters.phases}
+                    onPhasesChange={(phases) => handleFilterChange(filters.types, phases, filters.authors, filters.dateRange)}
+                    allAuthors={allAuthors}
+                    selectedAuthors={filters.authors}
+                    onAuthorsChange={(authors) => handleFilterChange(filters.types, filters.phases, authors, filters.dateRange)}
+                    date={filters.dateRange}
+                    onDateChange={(dateRange) => handleFilterChange(filters.types, filters.phases, filters.authors, dateRange)}
+                    onClearDate={() => handleFilterChange(filters.types, filters.phases, filters.authors, undefined)}
+                    onClearAllFilters={clearAllFilters}
+                    isMobile={true}
+                  />
+                </div>
+              </SheetContent>
             </Sheet>
             
             {/* Date range selector for desktop */}
@@ -237,5 +240,14 @@ export default function Home() {
         </div>
       </div>
     </main>
+  )
+}
+
+// Wrapper component with Suspense
+export default function Home() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <HomeContent />
+    </Suspense>
   )
 }
