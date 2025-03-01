@@ -40,7 +40,7 @@ export default function ProposalDetails() {
       try {
         if (!token) return;
 
-        const response = await fetch(`http://localhost:8000/projetoslei?external_id=${params.external_id}`, {
+        const response = await fetch(`https://legis.passosperdidos.pt/projetoslei?external_id=${params.external_id}`, {
           headers: {
             Authorization: `Bearer ${token}`
           }
