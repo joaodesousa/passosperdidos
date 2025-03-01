@@ -84,8 +84,8 @@ export function useFetchItems(page: number, searchTerm: string, filters: FilterS
     totalPages,
     allTypes,
     allPhases,
-    authorNames, // Return author names for the UI
-    allAuthors,  // Also return the full author objects if needed
+    authorNames, 
+    allAuthors, 
     isMetadataLoading,
     refetch: fetchItemsData
   }
