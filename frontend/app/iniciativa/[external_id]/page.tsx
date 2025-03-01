@@ -1,43 +1,46 @@
 // frontend/app/iniciativa/[external_id]/page.tsx
 import { Suspense } from 'react';
-import { Metadata, ResolvingMetadata } from 'next';
-
-// Import components
+import { Metadata } from 'next';
 import Loading from '../../loading';
 import { DetailContent } from './detail-content';
-
-// Import API functions (create this if needed)
-import { getProposalForId } from '../../../lib/server-api'; // You'll need to create this
+import { getProposalForId } from '../../../lib/server-api';
 
 // Generate metadata
 export async function generateMetadata(
-  { params }: { params: { external_id: string } },
-  parent: ResolvingMetadata
+  { params }: { params: { external_id: string } }
 ): Promise<Metadata> {
   try {
     // Try to fetch the proposal data
     const proposal = await getProposalForId(params.external_id);
     
     if (proposal) {
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://passosperdidos.pt';
+      const title = `${proposal.type}: ${proposal.title}`;
+      const description = proposal.description || `Detalhes da iniciativa legislativa ${params.external_id}`;
+      
+      // Create OG image URL with encoded parameters
+      const ogImageUrl = `${baseUrl}/api/og?title=${encodeURIComponent(proposal.title)}&subtitle=${encodeURIComponent(proposal.type)}`;
+      
       return {
-        title: `${proposal.type}: ${proposal.title}`,
-        description: proposal.description || `Detalhes da iniciativa legislativa ${params.external_id}`,
+        title,
+        description,
         openGraph: {
-          title: `${proposal.type}: ${proposal.title}`,
-          description: proposal.description || `Detalhes da iniciativa legislativa ${params.external_id}`,
+          title,
+          description,
           type: 'article',
-          url: `https://passosperdidos.pt/iniciativa/${params.external_id}`,
+          url: `${baseUrl}/iniciativa/${params.external_id}`,
           images: [{
-            url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://passosperdidos.pt'}/api/og?title=${encodeURIComponent(proposal.title)}&subtitle=${encodeURIComponent(proposal.type)}`,
+            url: ogImageUrl,
             width: 1200,
             height: 630,
-            alt: proposal.title,
+            alt: title,
           }],
         },
         twitter: {
           card: 'summary_large_image',
-          title: `${proposal.type}: ${proposal.title}`,
-          description: proposal.description || `Detalhes da iniciativa legislativa ${params.external_id}`,
+          title,
+          description,
+          images: [ogImageUrl],
         },
       };
     }
