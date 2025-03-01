@@ -8,7 +8,7 @@ import { CalendarIcon, Check, ChevronsUpDown } from 'lucide-react'
 import { cn } from "@/lib/utils"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { MultiSelect } from "./multiselect"
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 
 interface SidebarProps {
@@ -26,6 +26,7 @@ interface SidebarProps {
   onClearDate: () => void
   date: DateRange | undefined
   onClearAllFilters: () => void
+  isMobile?: boolean // New prop to detect mobile sidebar
 }
 
 export function Sidebar({
@@ -43,15 +44,41 @@ export function Sidebar({
   selectedAuthors,
   onAuthorsChange,
   onClearAllFilters,
+  isMobile = false // Default to desktop view
 }: SidebarProps) {
-  const [open, setOpen] = useState(false)
+  const [phaseOpen, setPhaseOpen] = useState(false)
+  const [authorOpen, setAuthorOpen] = useState(false)
   const [authorValue, setAuthorValue] = useState("")
+  
+  // Reference to the MultiSelect component
+  const multiSelectRef = useRef<HTMLDivElement>(null)
+  
+  // Sync authorValue with selectedAuthors from props
+  useEffect(() => {
+    if (selectedAuthors.length > 0) {
+      setAuthorValue(selectedAuthors[0])
+    } else {
+      setAuthorValue("")
+    }
+  }, [selectedAuthors])
 
   const handleClearFilters = () => {
-    setAuthorValue(""); // Reset local state
-    onClearAllFilters(); // Call the function from the parent
-  };
+    setAuthorValue("") // Reset local state
+    onClearAllFilters() // Call the function from the parent
+  }
   
+  // Determine if any filters are active
+  const hasActiveFilters = 
+    selectedTypes.length > 0 || 
+    selectedPhases.length > 0 || 
+    selectedAuthors.length > 0 || 
+    date?.from != null
+
+  // Helper function to truncate text with ellipsis if too long
+  const truncateText = (text: string, maxLength: number) => {
+    if (!text) return "";
+    return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+  }
 
   return (
     <div className="w-full md:w-64 dark:bg-[#09090B] md:dark:border md:dark:border-blue md:dark:border-opacity-20 p-4 rounded-lg shadow">
@@ -67,20 +94,24 @@ export function Sidebar({
             <div>
               <h3 className="text-sm font-medium mb-2">Tipo</h3>
               <MultiSelect
+                ref={multiSelectRef}
                 options={allTypes.map((type) => ({ label: type, value: type }))}
                 selected={selectedTypes}
                 onChange={onTypesChange}
                 placeholder="Selecione tipos..."
+                preventAutoOpen={isMobile} // Prevent auto-opening on mobile
               />
             </div>
 
             <div className="dark:bg-[#09090B]">
               <h3 className="text-sm font-medium mb-2">Fase</h3>
-              <Popover>
+              <Popover open={phaseOpen} onOpenChange={setPhaseOpen}>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between dark:bg-[#09090B]">
-                    {selectedPhases[0] || "Selecione fases..."}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  <Button variant="outline" role="combobox" aria-expanded={phaseOpen} className="w-full justify-between dark:bg-[#09090B]">
+                    <span className="truncate block mr-2">
+                      {selectedPhases.length > 0 ? truncateText(selectedPhases[0], 20) : "Selecione fases..."}
+                    </span>
+                    <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50 flex-none" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[200px] p-0 dark:bg-[#09090B]" align="start">
@@ -93,12 +124,12 @@ export function Sidebar({
                           <CommandItem
                             key={phase}
                             onSelect={() => {
-                              onPhasesChange([phase])
-                              setOpen(false)
+                              onPhasesChange(selectedPhases.includes(phase) ? [] : [phase])
+                              setPhaseOpen(false)
                             }}
                           >
                             <Check
-                              className={cn("mr-2 h-4 w-4", selectedPhases[0] === phase ? "opacity-100" : "opacity-0")}
+                              className={cn("mr-2 h-4 w-4", selectedPhases.includes(phase) ? "opacity-100" : "opacity-0")}
                             />
                             {phase}
                           </CommandItem>
@@ -112,11 +143,13 @@ export function Sidebar({
 
             <div className="dark:bg-[#09090B]">
               <h3 className="text-sm font-medium mb-2">Autor</h3>
-              <Popover open={open} onOpenChange={setOpen}>
+              <Popover open={authorOpen} onOpenChange={setAuthorOpen}>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between dark:bg-[#09090B]">
-                    {authorValue ? allAuthors.find((author) => author === authorValue) : "Selecione autores..."}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  <Button variant="outline" role="combobox" aria-expanded={authorOpen} className="w-full justify-between dark:bg-[#09090B]">
+                    <span className="truncate block mr-2">
+                      {authorValue ? truncateText(authorValue, 20) : "Selecione autores..."}
+                    </span>
+                    <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50 flex-none" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[200px] p-0 dark:bg-[#09090B]" align="start">
@@ -129,9 +162,10 @@ export function Sidebar({
                           <CommandItem
                             key={author}
                             onSelect={() => {
-                              setAuthorValue(author === authorValue ? "" : author)
-                              onAuthorsChange([author])
-                              setOpen(false)
+                              const newValue = author === authorValue ? "" : author
+                              setAuthorValue(newValue)
+                              onAuthorsChange(newValue ? [newValue] : [])
+                              setAuthorOpen(false)
                             }}
                           >
                             <Check
@@ -158,18 +192,20 @@ export function Sidebar({
                       !date && "text-muted-foreground",
                     )}
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date?.from ? (
-                      date.to ? (
-                        <>
-                          {format(date.from, "dd/MM/yyyy")} - {format(date.to, "dd/MM/yyyy")}
-                        </>
+                    <CalendarIcon className="mr-2 h-4 w-4 flex-none" />
+                    <span className="truncate">
+                      {date?.from ? (
+                        date.to ? (
+                          <>
+                            {format(date.from, "dd/MM/yyyy")} - {format(date.to, "dd/MM/yyyy")}
+                          </>
+                        ) : (
+                          format(date.from, "dd/MM/yyyy")
+                        )
                       ) : (
-                        format(date.from, "dd/MM/yyyy")
-                      )
-                    ) : (
-                      <span>Selecione um período</span>
-                    )}
+                        <span>Selecione um período</span>
+                      )}
+                    </span>
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -193,9 +229,15 @@ export function Sidebar({
               </Popover>
             </div>
 
-            <Button variant="outline" onClick={handleClearFilters} className="w-full mt-4 dark:bg-[#09090B]">
-              Limpar Filtros
-            </Button>
+            {hasActiveFilters && (
+              <Button 
+                variant="outline" 
+                onClick={handleClearFilters} 
+                className="w-full mt-4 dark:bg-[#09090B]"
+              >
+                Limpar Todos os Filtros
+              </Button>
+            )}
           </>
         )}
       </div>

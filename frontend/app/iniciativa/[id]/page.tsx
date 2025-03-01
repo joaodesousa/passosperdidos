@@ -1,5 +1,6 @@
 "use client"
 
+import { useSearchParams, useRouter } from "next/navigation"
 import { useParams } from "next/navigation"
 import { useState, useEffect } from "react"
 import Link from "next/link"
@@ -83,6 +84,18 @@ export default function ProposalDetails() {
   const [proposal, setProposal] = useState<Proposal | null>(null)
   const [token, setToken] = useState<string | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
+
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const returnTo = searchParams.get('returnTo')
+  
+  const handleGoBack = () => {
+    if (returnTo) {
+      router.push(decodeURIComponent(returnTo))
+    } else {
+      router.push('/')
+    }
+  }
 
   useEffect(() => {
     const fetchToken = async () => {
@@ -251,10 +264,10 @@ export default function ProposalDetails() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <Link href="/" className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-6">
+      <Button onClick={handleGoBack} className="inline-flex items-center text-blue-600 bg-transparent hover:text-blue-800 hover:bg-transparent mb-6">
         <ArrowLeft className="mr-2 h-4 w-4" />
         Voltar para a lista
-      </Link>
+      </Button>
 
       <Card className="mb-8 dark:bg-[#09090B]">
         <CardHeader>

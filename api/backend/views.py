@@ -1,7 +1,6 @@
 from rest_framework import viewsets, status
-from .models import ProjetoLei, Phase
-from .serializers import ProjetoLeiSerializer
-from .pagination import CustomPagination
+from .models import ProjetoLei, Phase, Author
+from .serializers import ProjetoLeiSerializer, AuthorSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
@@ -14,12 +13,10 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Subquery, OuterRef
 from datetime import datetime
 
-class AuthorListView(APIView):
+class AuthorViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
-
-    def get(self, request):
-        authors = ProjetoLei.objects.values_list('authors__name', flat=True).distinct().order_by('authors__name')
-        return Response(list(authors))
+    queryset = Author.objects.all()
+    serializer_class = AuthorSerializer
     
 class TypeListView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
