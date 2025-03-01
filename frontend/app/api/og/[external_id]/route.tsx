@@ -3,6 +3,35 @@ import { NextRequest } from 'next/server';
 
 export const runtime = 'edge';
 
+// Define a smaller font loading approach
+async function loadFont(fontName: string) {
+  return await fetch(
+    new URL(`/public/fonts/${fontName}.ttf`, import.meta.url)
+  ).then((res) => res.arrayBuffer());
+}
+
+// Helper function to get auth token with reduced scope
+async function getAuthToken() {
+  try {
+    const response = await fetch(process.env.API_BASE_URL + '/token/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        username: process.env.API_USERNAME,
+        password: process.env.API_PASSWORD,
+      }),
+    });
+    
+    const data = await response.json();
+    return data.access;
+  } catch (error) {
+    console.error('Error getting auth token:', error);
+    return null;
+  }
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { external_id: string } }
@@ -12,11 +41,19 @@ export async function GET(
     
     // Fetch the proposal data
     const token = await getAuthToken();
-    const response = await fetch(`https://legis.passosperdidos.pt/projetoslei?external_id=${externalId}`, {
+    if (!token) {
+      return new Response('Failed to get authentication token', { status: 500 });
+    }
+    
+    const response = await fetch(`${process.env.API_BASE_URL}/projetoslei?external_id=${externalId}`, {
       headers: {
         Authorization: `Bearer ${token}`
       }
     });
+    
+    if (!response.ok) {
+      return new Response(`API error: ${response.status}`, { status: response.status });
+    }
     
     const data = await response.json();
     const proposal = data.results[0];
@@ -25,14 +62,9 @@ export async function GET(
       return new Response('Proposal not found', { status: 404 });
     }
     
-    // Load the fonts
-    const interSemiBold = await fetch(
-      new URL('/public/fonts/Inter-SemiBold.ttf', import.meta.url)
-    ).then((res) => res.arrayBuffer());
-    
-    const interBold = await fetch(
-      new URL('/public/fonts/Inter-Bold.ttf', import.meta.url)
-    ).then((res) => res.arrayBuffer());
+    // Load only the essential fonts
+    const interSemiBold = await loadFont('Inter-SemiBold');
+    const interBold = await loadFont('Inter-Bold');
 
     return new ImageResponse(
       (
@@ -44,7 +76,7 @@ export async function GET(
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: '#0f172a', // Dark blue background
+            backgroundColor: '#0f172a',
             backgroundImage: 'linear-gradient(to bottom right, #0f172a, #1e293b)',
             padding: '40px 60px',
           }}
@@ -174,22 +206,4 @@ export async function GET(
     console.error('Error generating OG image:', error);
     return new Response('Failed to generate image', { status: 500 });
   }
-}
-
-// Helper function to get auth token
-async function getAuthToken() {
-  // Implementation depends on your auth flow
-  // You might need to adjust this based on your setup
-  const response = await fetch('https://legis.passosperdidos.pt/token/', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      // Your auth credentials
-    }),
-  });
-  
-  const data = await response.json();
-  return data.access;
 }
