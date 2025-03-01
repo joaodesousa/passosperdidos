@@ -1,3 +1,4 @@
+// frontend/app/iniciativa/[external_id]/page.tsx
 import { Suspense } from 'react';
 import { Metadata, ResolvingMetadata } from 'next';
 
@@ -5,19 +6,48 @@ import { Metadata, ResolvingMetadata } from 'next';
 import Loading from '../../loading';
 import { DetailContent } from './detail-content';
 
+// Import API functions (create this if needed)
+import { getProposalForId } from '../../../lib/server-api'; // You'll need to create this
+
 // Generate metadata
 export async function generateMetadata(
   { params }: { params: { external_id: string } },
   parent: ResolvingMetadata
 ): Promise<Metadata> {
-  // Instead of defining a static title here,
-  // let the DetailContent component handle the title with useEffect
+  try {
+    // Try to fetch the proposal data
+    const proposal = await getProposalForId(params.external_id);
+    
+    if (proposal) {
+      return {
+        title: `${proposal.type}: ${proposal.title}`,
+        description: proposal.description || `Detalhes da iniciativa legislativa ${params.external_id}`,
+        openGraph: {
+          title: `${proposal.type}: ${proposal.title}`,
+          description: proposal.description || `Detalhes da iniciativa legislativa ${params.external_id}`,
+          type: 'article',
+          url: `https://passosperdidos.pt/iniciativa/${params.external_id}`,
+          images: [{
+            url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://passosperdidos.pt'}/api/og?title=${encodeURIComponent(proposal.title)}&subtitle=${encodeURIComponent(proposal.type)}`,
+            width: 1200,
+            height: 630,
+            alt: proposal.title,
+          }],
+        },
+        twitter: {
+          card: 'summary_large_image',
+          title: `${proposal.type}: ${proposal.title}`,
+          description: proposal.description || `Detalhes da iniciativa legislativa ${params.external_id}`,
+        },
+      };
+    }
+  } catch (error) {
+    console.error('Error generating metadata:', error);
+  }
   
-  
-  // Return a minimal metadata object
-  // The title will be set on the client side
+  // Fallback metadata
   return {
-    title: 'Passos Perdidos', // Use your site name as a fallback
+    title: 'Iniciativa Legislativa | Passos Perdidos',
     description: 'Detalhes da iniciativa legislativa',
   };
 }
