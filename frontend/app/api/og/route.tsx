@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
           justifyContent: "flex-end",
           backgroundColor: "white",
           backgroundImage:
-            "linear-gradient(to bottom, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.8)), url(/placeholder.svg?height=630&width=1200)",
+            "linear-gradient(to bottom, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.8))",
           backgroundSize: "1200px 630px",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
