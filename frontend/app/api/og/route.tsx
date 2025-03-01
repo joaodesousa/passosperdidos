@@ -14,102 +14,141 @@ export async function GET(request: NextRequest) {
     return new ImageResponse(
       (
         <div
+        style={{
+          height: "100%",
+          width: "100%",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
+          justifyContent: "flex-end",
+          backgroundColor: "white",
+          backgroundImage:
+            "linear-gradient(to bottom, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.8)), url(/placeholder.svg?height=630&width=1200)",
+          backgroundSize: "1200px 630px",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          padding: "40px 80px",
+          position: "relative",
+        }}
+      >
+        {/* Portuguese flag colors bar */}
+        <div
           style={{
-            height: '100%',
-            width: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: '#0f172a',
-            backgroundImage: 'linear-gradient(to bottom right, #0f172a, #1e293b)',
-            padding: '40px 60px',
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: "12px",
+            display: "flex",
+            width: "100%",
           }}
         >
-          {/* Logo or header */}
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 24 }}>
-            <div
-              style={{
-                height: 24,
-                width: 24,
-                borderRadius: '50%',
-                backgroundColor: '#3b82f6',
-                marginRight: 8,
-              }}
-            />
+          <div style={{ flex: 2, backgroundColor: "#006600" }} />
+          <div style={{ flex: 3, backgroundColor: "#FF0000" }} />
+        </div>
+
+        {/* Parliament silhouette */}
+        <div
+          style={{
+            position: "absolute",
+            top: "60px",
+            right: "80px",
+            opacity: 0.1,
+            fontSize: "160px",
+          }}
+        >
+          🏛️
+        </div>
+       
+          <div
+            style={{
+              position: "absolute",
+              top: "80px",
+              left: "80px",
+              backgroundColor: "#006600",
+              color: "white",
+              padding: "8px 16px",
+              borderRadius: "4px",
+              fontSize: "24px",
+              fontWeight: "bold",
+            }}
+          >
+            Passos Perdidos
+          </div>
+      
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-start",
+            maxWidth: "80%",
+          }}
+        >
+          <h1
+            style={{
+              fontSize: "44px",
+              fontWeight: "bold",
+              color: "#333333",
+              margin: "0 0 24px 0",
+              lineHeight: 1.1,
+            }}
+          >
+             {subtitle}
+          </h1>
+
+          <p
+            style={{
+              fontSize: "22px",
+              color: "#666666",
+              margin: 0,
+              lineHeight: 1.3,
+            }}
+          >
+            {title}
+          </p>
+        </div>
+
+
+        <div
+          style={{
+            position: "absolute",
+            bottom: "40px",
+            left: "80px",
+            right: "80px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            width: "100px",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+            }}
+          >
             <span
               style={{
-                fontFamily: 'sans-serif',
-                fontWeight: 600,
-                fontSize: 24,
-                color: 'white',
+                fontSize: "24px",
+                fontWeight: "bold",
+                color: "#333333",
               }}
             >
-              Passos Perdidos
+            
             </span>
           </div>
 
-          {/* Main title */}
           <div
             style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginTop: 30,
+              fontSize: "20px",
+              color: "#666666",
             }}
           >
-            <div
-              style={{
-                fontFamily: 'sans-serif',
-                fontWeight: 500,
-                fontSize: 22,
-                color: '#94a3b8',
-                marginBottom: 10,
-                textAlign: 'center',
-              }}
-            >
-              {subtitle}
-            </div>
-            <div
-              style={{
-                fontFamily: 'sans-serif',
-                fontWeight: 700,
-                fontSize: 36,
-                textAlign: 'center',
-                color: 'white',
-                maxWidth: 800,
-                lineHeight: 1.4,
-              }}
-            >
-              {title}
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              width: '100%',
-              marginTop: 'auto',
-              paddingTop: 32,
-              borderTop: '1px solid rgba(148, 163, 184, 0.2)',
-            }}
-          >
-            <div
-              style={{
-                fontFamily: 'sans-serif',
-                fontWeight: 500,
-                fontSize: 18,
-                color: '#94a3b8',
-              }}
-            >
-              passosperdidos.pt
-            </div>
+          
           </div>
         </div>
+      </div>
       ),
       {
         width: 1200,
