@@ -16,6 +16,16 @@ from django.core.cache import cache
 from django.utils import timezone
 
 
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from django.db.models import Count, Avg, Sum
+from django.utils import timezone
+from django.core.cache import cache
+from .models import ProjetoLei, Phase, Author, Vote
+from datetime import timedelta
+
 class DashboardStatisticsView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticatedOrReadOnly]
@@ -35,48 +45,68 @@ class DashboardStatisticsView(APIView):
         stats['total_proposals'] = ProjetoLei.objects.count()
         
         # Total number of vote events
-        # Count all vote events by summing the length of votes arrays in all proposals
-        vote_count = 0
-        for projeto in ProjetoLei.objects.all():
-            if hasattr(projeto, 'votes') and projeto.votes:
-                vote_count += len(projeto.votes)
-        stats['total_votes'] = vote_count
+        # Use the Vote model's count (not the ManyToMany relation)
+        stats['total_votes'] = Vote.objects.count()
         
         # Total number of deputies (assuming 230 as a fixed number)
         stats['total_deputies'] = 230
         
         # Average days to approval
-        # This calculation depends on your specific data model and what "approval" means
-        # Example implementation - find projects with "Aprovação" phase:
-        approved_projects = ProjetoLei.objects.filter(
-            phases__name__icontains='Aprovação'  # Adjust based on your actual phase name
-        ).distinct()
-        
-        if approved_projects.exists():
-            # Calculate average time between first submission and approval
-            total_days = 0
-            count = 0
+        try:
+            # Find the Phases that indicate approval
+            approval_phases = Phase.objects.filter(
+                name__icontains='Aprovação'  # Adjust based on your actual phase names
+            ).values_list('id', flat=True)
             
-            for projeto in approved_projects:
-                # Find earliest date (submission)
-                earliest_phase = projeto.phases.earliest('date')
-                # Find approval date
-                approval_phase = projeto.phases.filter(name__icontains='Aprovação').earliest('date')
+            if approval_phases:
+                # Get projects that have an approval phase
+                approved_projects = ProjetoLei.objects.filter(
+                    phases__id__in=approval_phases
+                ).distinct()
                 
-                if earliest_phase and approval_phase:
-                    days_diff = (approval_phase.date - earliest_phase.date).days
-                    if days_diff > 0:  # Avoid negative or same-day approvals
-                        total_days += days_diff
-                        count += 1
-            
-            stats['avg_days_to_approval'] = round(total_days / count) if count > 0 else 0
-        else:
+                if approved_projects.exists():
+                    # Calculate the average time to approval for each project
+                    total_days = 0
+                    count = 0
+                    
+                    for projeto in approved_projects:
+                        try:
+                            # Get the earliest phase date for this project
+                            first_phase = projeto.phases.all().order_by('date').first()
+                            
+                            # Get the approval phase date
+                            approval_phase = projeto.phases.filter(
+                                id__in=approval_phases
+                            ).order_by('date').first()
+                            
+                            if first_phase and approval_phase and first_phase.date and approval_phase.date:
+                                # Calculate days difference
+                                days_diff = (approval_phase.date - first_phase.date).days
+                                if days_diff > 0:
+                                    total_days += days_diff
+                                    count += 1
+                        except Exception as e:
+                            print(f"Error calculating days for project {projeto.id}: {e}")
+                            continue
+                    
+                    if count > 0:
+                        stats['avg_days_to_approval'] = round(total_days / count)
+                    else:
+                        stats['avg_days_to_approval'] = 0
+                else:
+                    stats['avg_days_to_approval'] = 0
+            else:
+                # If no approval phases found
+                stats['avg_days_to_approval'] = 0
+                
+        except Exception as e:
+            print(f"Error calculating average days: {e}")
             stats['avg_days_to_approval'] = 0
         
-        # You can add more statistics here as needed
-        # For example:
+        # Proposals this year
+        current_year = timezone.now().year
         stats['proposals_this_year'] = ProjetoLei.objects.filter(
-            date__year=timezone.now().year
+            date__year=current_year
         ).count()
         
         # Party statistics
@@ -85,6 +115,13 @@ class DashboardStatisticsView(APIView):
             party_stats[author.name] = ProjetoLei.objects.filter(authors__name=author.name).count()
         
         stats['proposals_by_party'] = party_stats
+        
+        # Additional statistics you might want to include
+        
+        # Recent votes
+        stats['recent_votes'] = Vote.objects.filter(
+            date__gte=timezone.now().date() - timedelta(days=30)
+        ).count()
         
         # Cache results for 6 hours
         cache.set(cache_key, stats, 6 * 60 * 60)
