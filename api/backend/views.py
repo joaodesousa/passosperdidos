@@ -11,7 +11,85 @@ from rest_framework.filters import SearchFilter
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Subquery, OuterRef
-from datetime import datetime
+from datetime import datetime, timedelta
+from django.core.cache import cache
+from django.utils import timezone
+
+
+class DashboardStatisticsView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def get(self, request):
+        # Try to get from cache first (update every 6 hours)
+        cache_key = 'dashboard_statistics'
+        cached_stats = cache.get(cache_key)
+        
+        if cached_stats:
+            return Response(cached_stats)
+        
+        # Calculate statistics from database
+        stats = {}
+        
+        # Total number of proposals
+        stats['total_proposals'] = ProjetoLei.objects.count()
+        
+        # Total number of vote events
+        # Count all vote events by summing the length of votes arrays in all proposals
+        vote_count = 0
+        for projeto in ProjetoLei.objects.all():
+            if hasattr(projeto, 'votes') and projeto.votes:
+                vote_count += len(projeto.votes)
+        stats['total_votes'] = vote_count
+        
+        # Total number of deputies (assuming 230 as a fixed number)
+        stats['total_deputies'] = 230
+        
+        # Average days to approval
+        # This calculation depends on your specific data model and what "approval" means
+        # Example implementation - find projects with "Aprovação" phase:
+        approved_projects = ProjetoLei.objects.filter(
+            phases__name__icontains='Aprovação'  # Adjust based on your actual phase name
+        ).distinct()
+        
+        if approved_projects.exists():
+            # Calculate average time between first submission and approval
+            total_days = 0
+            count = 0
+            
+            for projeto in approved_projects:
+                # Find earliest date (submission)
+                earliest_phase = projeto.phases.earliest('date')
+                # Find approval date
+                approval_phase = projeto.phases.filter(name__icontains='Aprovação').earliest('date')
+                
+                if earliest_phase and approval_phase:
+                    days_diff = (approval_phase.date - earliest_phase.date).days
+                    if days_diff > 0:  # Avoid negative or same-day approvals
+                        total_days += days_diff
+                        count += 1
+            
+            stats['avg_days_to_approval'] = round(total_days / count) if count > 0 else 0
+        else:
+            stats['avg_days_to_approval'] = 0
+        
+        # You can add more statistics here as needed
+        # For example:
+        stats['proposals_this_year'] = ProjetoLei.objects.filter(
+            date__year=timezone.now().year
+        ).count()
+        
+        # Party statistics
+        party_stats = {}
+        for author in Author.objects.filter(author_type='Grupo'):
+            party_stats[author.name] = ProjetoLei.objects.filter(authors__name=author.name).count()
+        
+        stats['proposals_by_party'] = party_stats
+        
+        # Cache results for 6 hours
+        cache.set(cache_key, stats, 6 * 60 * 60)
+        
+        return Response(stats)
 
 class AuthorViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
