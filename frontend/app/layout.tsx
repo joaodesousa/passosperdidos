@@ -27,11 +27,11 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <div className="min-h-screen bg-[#f8f9fa] dark:bg-[#09090B]">
-            <Header />
+            {/* <Header /> */}
             {children}
             <Toaster position="top-right" />
           </div>
-          <Footer />
+          {/* <Footer /> */}
         </ThemeProvider>
       </body>
     </html>
