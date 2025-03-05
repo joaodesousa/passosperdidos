@@ -226,7 +226,7 @@ class ProjetoLeiDetailSerializer(serializers.ModelSerializer):
 class PhaseBasicSerializer(serializers.ModelSerializer):
     class Meta:
         model = Phase
-        fields = ['id', 'name', 'date', 'code', 'observation']
+        fields = ['id', 'name', 'date', 'code', 'observation', 'phase']
 
 
 # Full serializer for complete details
