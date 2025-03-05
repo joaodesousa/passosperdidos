@@ -189,12 +189,13 @@ class PhaseSerializer(serializers.ModelSerializer):
 class ProjetoLeiListSerializer(serializers.ModelSerializer):
     legislature = LegislatureSerializer(read_only=True)
     authors = AuthorSerializer(many=True, read_only=True)
+    phases = PhaseSerializer(many=True, read_only=True)
     
     class Meta:
         model = ProjetoLei
         fields = [
             'external_id', 'title', 'type', 'legislature', 'date', 
-            'initiative_number', 'authors'
+            'initiative_number', 'authors', "phases"
         ]
         lookup_field = 'external_id'
         extra_kwargs = {
