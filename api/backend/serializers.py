@@ -171,18 +171,10 @@ class CommissionSerializer(serializers.ModelSerializer):
 
 
 class PhaseSerializer(serializers.ModelSerializer):
-    attachments = AttachmentSerializer(many=True, read_only=True)
-    publications = PublicationSerializer(many=True, read_only=True)
-    commissions = CommissionSerializer(many=True, read_only=True)
-    debates = DebateSerializer(many=True, read_only=True)
-    approved_texts = ApprovedTextSerializer(many=True, read_only=True)
-    deputy_appeals = DeputyAppealSerializer(many=True, read_only=True)
-    party_appeals = PartyAppealSerializer(many=True, read_only=True)
-    related_initiatives = RelatedInitiativeSerializer(many=True, read_only=True)
     
     class Meta:
         model = Phase
-        fields = '__all__'
+        fields = ['name']
 
 
 # Basic serializer for summary view

@@ -217,7 +217,33 @@ class AuthorViewSet(viewsets.ReadOnlyModelViewSet):
         projetos = author.projetos_lei.all()
         serializer = ProjetoLeiListSerializer(projetos, many=True)
         return Response(serializer.data)
-
+    
+    @action(detail=False, methods=['get'])
+    def party_groups(self, request):
+        """
+        Get only authors with author_type 'Grupo' (political parties),
+        ensuring each party name appears only once.
+        """
+        # Get distinct party names
+        distinct_names = Author.objects.filter(
+            author_type='Grupo'
+        ).values_list('name', flat=True).distinct()
+        
+        # For each distinct name, get the first (or most recent) record
+        parties = []
+        for name in distinct_names:
+            party = Author.objects.filter(
+                author_type='Grupo',
+                name=name
+            ).first()
+            if party:
+                parties.append(party)
+        
+        # Sort by name
+        parties.sort(key=lambda x: x.name)
+        
+        serializer = self.get_serializer(parties, many=True)
+        return Response(serializer.data)
 
 class VoteViewSet(viewsets.ReadOnlyModelViewSet):
     """
@@ -286,13 +312,15 @@ class TypeListView(APIView):
         return Response(list(types))
 
 
-class PhaseListView(APIView):
+class UniquePhaseNamesView(APIView):
     """
     Returns a list of all unique phase names.
     """
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticatedOrReadOnly]
-
+    
     def get(self, request):
-        phases = Phase.objects.values_list('name', flat=True).distinct().order_by('name')
-        return Response(list(phases))
+        # Get distinct phase names directly as a list
+        phases = list(Phase.objects.values_list('name', flat=True).distinct().order_by('name'))
+        # Return just the names as a list
+        return Response(phases)
