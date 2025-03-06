@@ -110,6 +110,13 @@ class ProjetoLeiViewSet(ReadOnlyModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         
+        # Annotate with the date of the first phase
+        queryset = queryset.annotate(first_phase_date=Subquery(
+            Phase.objects.filter(projetos_lei=OuterRef('id'))
+            .order_by('date')
+            .values('date')[:1]
+        )).order_by('-first_phase_date')  # Order by the date of the first phase in descending order
+        
         # Type filter
         type_param = self.request.query_params.get('type', None)
         if type_param:
