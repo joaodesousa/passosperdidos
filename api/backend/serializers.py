@@ -174,7 +174,7 @@ class PhaseSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Phase
-        fields = ['name']
+        fields = '__all__'
 
 
 # Basic serializer for summary view
