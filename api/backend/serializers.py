@@ -156,25 +156,19 @@ class DebateSerializer(serializers.ModelSerializer):
 
 class CommissionSerializer(serializers.ModelSerializer):
     documents = CommissionDocumentSerializer(many=True, read_only=True)
-    rapporteurs = RapporteurSerializer(many=True, read_only=True)
-    received_opinions = OpinionSerializer(many=True, read_only=True)
-    opinion_requests = OpinionRequestSerializer(many=True, read_only=True)
-    hearings = HearingSerializer(many=True, read_only=True)
-    audiences = AudienceSerializer(many=True, read_only=True)
     votes = CommissionVoteSerializer(many=True, read_only=True)
-    final_draft_submissions = FinalDraftSubmissionSerializer(many=True, read_only=True)
-    forwardings = ForwardingSerializer(many=True, read_only=True)
     
     class Meta:
         model = Commission
-        fields = '__all__'
+        fields = ['name', 'documents', 'votes']
 
 
 class PhaseSerializer(serializers.ModelSerializer):
+    commissions = CommissionSerializer(many=True, read_only=True)
     
     class Meta:
         model = Phase
-        fields = '__all__'
+        fields = ['id', 'name', 'date', 'code', 'observation', 'commissions']
 
 
 # Basic serializer for summary view
@@ -230,7 +224,7 @@ class ProjetoLeiFullSerializer(serializers.ModelSerializer):
     votes = VoteSerializer(many=True, read_only=True)
     related_initiatives = serializers.SerializerMethodField()
     attachments = AttachmentSerializer(many=True, read_only=True)
-    
+
     class Meta:
         model = ProjetoLei
         fields = '__all__'
@@ -238,7 +232,7 @@ class ProjetoLeiFullSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'url': {'lookup_field': 'external_id'}
         }
-    
+
     def get_related_initiatives(self, obj):
         # Get related initiatives through the many-to-many relationship
         related = obj.related_to.all()
