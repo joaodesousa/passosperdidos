@@ -229,6 +229,7 @@ class ProjetoLeiFullSerializer(serializers.ModelSerializer):
     phases = PhaseSerializer(many=True, read_only=True)
     votes = VoteSerializer(many=True, read_only=True)
     related_initiatives = serializers.SerializerMethodField()
+    attachments = AttachmentSerializer(many=True, read_only=True)
     
     class Meta:
         model = ProjetoLei
