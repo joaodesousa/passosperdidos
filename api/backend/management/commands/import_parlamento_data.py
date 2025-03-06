@@ -27,7 +27,7 @@ logger.setLevel(logging.INFO)
 MAX_TEXT_LENGTH = 5000
 MAX_URL_LENGTH = 2000
 MAX_NAME_LENGTH = 250
-MAX_TITLE_LENGTH = 500
+MAX_TITLE_LENGTH = 1000
 
 class Command(BaseCommand):
     help = 'Import initiatives from Parlamento API'

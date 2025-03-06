@@ -140,7 +140,7 @@ class VoteSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Vote
-        fields = '__all__'
+        exclude = ['details']
 
 
 class DebateSerializer(serializers.ModelSerializer):
@@ -219,7 +219,7 @@ class ProjetoLeiDetailSerializer(serializers.ModelSerializer):
 class PhaseBasicSerializer(serializers.ModelSerializer):
     class Meta:
         model = Phase
-        fields = ['id', 'name', 'date', 'code', 'observation', 'phases']
+        fields = ['id', 'name', 'date', 'code', 'observation']
 
 
 # Full serializer for complete details
