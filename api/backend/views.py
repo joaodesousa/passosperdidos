@@ -89,7 +89,7 @@ class ProjetoLeiViewSet(ReadOnlyModelViewSet):
     filterset_fields = ['type', 'legislature__number', 'initiative_number', 'date']
     search_fields = ['title', 'external_id', 'initiative_number']
     ordering_fields = ['date', 'initiative_number', 'title']
-    lookup_field = 'external_id'  # Use external_id instead of pk
+    lookup_field = 'external_id'  
     
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -110,12 +110,8 @@ class ProjetoLeiViewSet(ReadOnlyModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         
-        # Annotate with the date of the first phase
-        queryset = queryset.annotate(first_phase_date=Subquery(
-            Phase.objects.filter(projetos_lei=OuterRef('id'))
-            .order_by('date')
-            .values('date')[:1]
-        )).order_by('-first_phase_date')  # Order by the date of the first phase in descending order
+        # Order by external_id only
+        queryset = queryset.order_by('-external_id')  # Order by external_id
         
         # Type filter
         type_param = self.request.query_params.get('type', None)
@@ -153,7 +149,7 @@ class ProjetoLeiViewSet(ReadOnlyModelViewSet):
         # Handle start_date filter
         if start_date_param:
             try:
-                start_date = datetime.strptime(start_date_param, '%Y-%m-%d')
+                start_date = datetime.strptime(start_date_param, '%d-%m-%Y')
                 queryset = queryset.filter(date__gte=start_date)
             except ValueError:
                 pass
@@ -161,7 +157,7 @@ class ProjetoLeiViewSet(ReadOnlyModelViewSet):
         # Handle end_date filter
         if end_date_param:
             try:
-                end_date = datetime.strptime(end_date_param, '%Y-%m-%d')
+                end_date = datetime.strptime(end_date_param, '%d-%m-%Y')
                 queryset = queryset.filter(date__lte=end_date)
             except ValueError:
                 pass
