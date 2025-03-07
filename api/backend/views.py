@@ -7,7 +7,7 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.decorators import action
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Subquery, OuterRef, Count, Q
+from django.db.models import Subquery, OuterRef, Count, Q, Min
 from datetime import datetime, timedelta
 from django.core.cache import cache
 from django.utils import timezone
@@ -62,9 +62,11 @@ class DashboardStatisticsView(APIView):
             date__gte=timezone.now().date() - timedelta(days=30)
         ).count()
         
-        # Proposals in the last 30 days
-        stats['recent_proposals'] = ProjetoLei.objects.filter(
-            date__gte=timezone.now().date() - timedelta(days=30)
+        # Calculate the recent proposals based on the date of the first phase
+        stats['recent_proposals'] = ProjetoLei.objects.annotate(
+            first_phase_date=Min('phases__date')  # Annotate with the date of the first phase
+        ).filter(
+            first_phase_date__gte=timezone.now().date() - timedelta(days=30)  # Filter based on the first phase date
         ).count()
         
         # Most active phases
