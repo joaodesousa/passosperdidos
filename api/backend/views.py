@@ -148,21 +148,30 @@ class ProjetoLeiViewSet(ReadOnlyModelViewSet):
             else:
                 queryset = queryset.none()
 
-        # Handle start_date filter
+       
+        # Handle date range filters for phases
+        start_date_param = self.request.query_params.get('start_date', None)
+        end_date_param = self.request.query_params.get('end_date', None)
+
+        phase_date_filters = Q()
         if start_date_param:
             try:
                 start_date = datetime.strptime(start_date_param, '%d-%m-%Y')
-                queryset = queryset.filter(date__gte=start_date)
+                phase_date_filters &= Q(phases__date__gte=start_date)
             except ValueError:
                 pass
 
-        # Handle end_date filter
         if end_date_param:
             try:
                 end_date = datetime.strptime(end_date_param, '%d-%m-%Y')
-                queryset = queryset.filter(date__lte=end_date)
+                phase_date_filters &= Q(phases__date__lte=end_date)
             except ValueError:
                 pass
+
+        if phase_date_filters:
+            # Add the name filter to ensure we're looking at the "Entrada" phase
+            phase_date_filters &= Q(phases__name="Entrada")
+            queryset = queryset.filter(phase_date_filters).distinct()
 
         # Handle id filter
         id_param = self.request.query_params.get('external_id', None)
