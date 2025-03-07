@@ -2,6 +2,7 @@ import json
 import logging
 import requests
 import traceback
+import re  # Added for regex pattern matching
 from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.db import transaction
@@ -174,6 +175,59 @@ class Command(BaseCommand):
         # Process phases
         if not skip_phases:
             self.process_phases(data, projeto_lei)
+    
+    def parse_vote_details(self, details):
+        """
+        Parse HTML-like vote details into a structured format.
+        
+        Example input:
+        "A Favor: <I>PSD</I>, <I> PS</I>, <I> CH</I><BR>Contra:<I>PCP</I>"
+        
+        Example output:
+        {
+            "a_favor": ["PSD", "PS", "CH"],
+            "contra": ["PCP"],
+            "abstencao": []
+        }
+        """
+        if not details:
+            return {"a_favor": [], "contra": [], "abstencao": []}
+        
+        result = {"a_favor": [], "contra": [], "abstencao": []}
+        
+        # Split by <BR> to separate different vote types
+        vote_sections = details.split("<BR>")
+        
+        for section in vote_sections:
+            # Skip empty sections
+            if not section.strip():
+                continue
+                
+            # Extract vote type and parties
+            parts = section.split(":")
+            if len(parts) < 2:
+                continue
+                
+            vote_type = parts[0].strip().lower()
+            parties_html = ":".join(parts[1:])  # Rejoin in case there were colons in the party names
+            
+            # Map the vote type to our standardized keys
+            if "favor" in vote_type:
+                key = "a_favor"
+            elif "contra" in vote_type:
+                key = "contra"
+            elif "absten" in vote_type:
+                key = "abstencao"
+            else:
+                continue
+            
+            # Extract parties from <I> tags
+            parties = re.findall(r'<I>(.*?)<\/I>', parties_html)
+            
+            # Clean whitespace and add to result
+            result[key] = [party.strip() for party in parties]
+        
+        return result
     
     def process_authors(self, data, projeto_lei):
         """Process author data and link to ProjetoLei"""
@@ -804,12 +858,17 @@ class Command(BaseCommand):
                 continue
                 
             try:
+                # Parse vote details if available
+                details = vote_data.get('detalhe')
+                parsed_votes = self.parse_vote_details(details) if details else None
+                
+                # Create vote object with parsed data
                 vote = Vote(
                     date=self.parse_date(vote_data.get('data')),
                     result=self.truncate_text(vote_data.get('resultado', ''), 50),
-                    details=vote_data.get('detalhe'),
+                    details=details,  # Keep original details for backward compatibility
                     description=vote_data.get('descricao'),
-                    votes=vote_data,  # Store the full vote data in JSON field
+                    votes=parsed_votes or vote_data,  # Store parsed votes or original data
                     meeting=self.truncate_text(vote_data.get('reuniao', ''), 50),
                     meeting_type=self.truncate_text(vote_data.get('tipoReuniao', ''), 50),
                     unanimous=self.truncate_text(vote_data.get('unanime', ''), 50),
