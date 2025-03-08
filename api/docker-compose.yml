@@ -6,9 +6,9 @@ services:
     container_name: django_api
     restart: always
     env_file: .env
-    command: gunicorn api.wsgi:application --bind 0.0.0.0:8000
+    command: gunicorn api.wsgi:application --bind 0.0.0.0:8080
     ports:
-      - "8000:8000"
+      - "8080:8080"
     volumes:
       - .:/app
     environment:
