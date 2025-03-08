@@ -2,7 +2,7 @@ from rest_framework import viewsets, status, filters
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticated
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.decorators import action
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -25,7 +25,7 @@ from .serializers import (
 
 class DashboardStatisticsView(APIView):
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         # Try to get from cache first (update every 6 hours)
@@ -85,7 +85,7 @@ class ProjetoLeiViewSet(ReadOnlyModelViewSet):
     Uses external_id as the lookup field instead of the default primary key.
     """
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticated]
     queryset = ProjetoLei.objects.all().order_by('-date')
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['type', 'legislature__number', 'initiative_number', 'date']
@@ -187,7 +187,7 @@ class LegislatureViewSet(viewsets.ReadOnlyModelViewSet):
     API endpoint for accessing legislatures.
     """
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticated]
     queryset = Legislature.objects.all().order_by('-number')
     serializer_class = LegislatureSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
@@ -200,7 +200,7 @@ class PhaseViewSet(viewsets.ReadOnlyModelViewSet):
     API endpoint for accessing phases of legislative proposals.
     """
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticated]
     queryset = Phase.objects.all().order_by('-date')
     serializer_class = PhaseSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -214,7 +214,7 @@ class AuthorViewSet(viewsets.ReadOnlyModelViewSet):
     API endpoint for accessing authors of legislative proposals.
     """
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticated]
     queryset = Author.objects.all().order_by('name')
     serializer_class = AuthorSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -264,7 +264,7 @@ class VoteViewSet(viewsets.ReadOnlyModelViewSet):
     API endpoint for accessing votes on legislative proposals.
     """
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticated]
     queryset = Vote.objects.all().order_by('-date')
     serializer_class = VoteSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -278,7 +278,7 @@ class PublicationViewSet(viewsets.ReadOnlyModelViewSet):
     API endpoint for accessing publications related to legislative proposals.
     """
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticated]
     queryset = Publication.objects.all().order_by('-date')
     serializer_class = PublicationSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
@@ -291,7 +291,7 @@ class CommissionViewSet(viewsets.ReadOnlyModelViewSet):
     API endpoint for accessing commissions that review legislative proposals.
     """
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticated]
     queryset = Commission.objects.all().order_by('name')
     serializer_class = CommissionSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -305,7 +305,7 @@ class DebateViewSet(viewsets.ReadOnlyModelViewSet):
     API endpoint for accessing debates related to legislative proposals.
     """
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticated]
     queryset = Debate.objects.all().order_by('-date')
     serializer_class = DebateSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -319,7 +319,7 @@ class TypeListView(APIView):
     Returns a list of all unique initiative types.
     """
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         types = ProjetoLei.objects.values_list('type', flat=True).distinct().order_by('type')
@@ -331,7 +331,7 @@ class UniquePhaseNamesView(APIView):
     Returns a list of all unique phase names.
     """
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticated]
     
     def get(self, request):
         # Get distinct phase names directly as a list
