@@ -32,8 +32,8 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG_ENV = os.getenv('DEBUG', 'False')
-DEBUG = True
-#DEBUG = DEBUG_ENV.lower() in ('true', 'yes', 'y', '1')
+
+DEBUG = DEBUG_ENV.lower() in ('true', 'yes', 'y', '1')
 
 ALLOWED_HOSTS = ["4.180.13.143", "localhost", "legis.veto.pt", "api.veto.pt", "127.0.0.1"]
 CORS_ALLOWED_ORIGINS = ["http://localhost:3000", "https://veto.pt", "https://www.veto.pt"]
