@@ -1,12 +1,12 @@
 import json
 import logging
-import requests
 import traceback
 import re  # Added for regex pattern matching
 from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.db.utils import IntegrityError, DataError
+from django.db.models import Count
 from ...models import (
     ProjetoLei, Legislature, Phase, Attachment, Author, Vote, 
     Publication, Commission, CommissionDocument, Rapporteur, 
@@ -116,6 +116,7 @@ class Command(BaseCommand):
                 logger.error(traceback.format_exc())
                 
         logger.info(f"Import completed. Successfully imported: {successfully_imported}. Errors: {errors}")
+        self.log_stats()
     
     def import_single_initiative(self, data, skip_phases=False):
         """Import a single initiative and its related data"""
@@ -439,12 +440,23 @@ class Command(BaseCommand):
                 continue
                 
             try:
-                attachment = Attachment(
-                    name=self.truncate_text(attachment_data.get('anexoNome', '') or 'Untitled Attachment', MAX_NAME_LENGTH),
-                    file_url=self.truncate_text(attachment_data.get('anexoFich', '') or '', MAX_URL_LENGTH),
+                # Check if attachment already exists
+                name = self.truncate_text(attachment_data.get('anexoNome', '') or 'Untitled Attachment', MAX_NAME_LENGTH)
+                file_url = self.truncate_text(attachment_data.get('anexoFich', '') or '', MAX_URL_LENGTH)
+                
+                existing_attachment = Attachment.objects.filter(
+                    name=name,
+                    file_url=file_url,
                     phase=phase
-                )
-                attachment.save()
+                ).first()
+                
+                if not existing_attachment:
+                    attachment = Attachment(
+                        name=name,
+                        file_url=file_url,
+                        phase=phase
+                    )
+                    attachment.save()
             except Exception as e:
                 logger.warning(f"Error saving attachment: {str(e)}")
 
@@ -459,25 +471,36 @@ class Command(BaseCommand):
                 continue
                 
             try:
-                publication = Publication(
-                    date=self.parse_date(pub_data.get('pubdt')),
-                    legislature_code=self.truncate_text(pub_data.get('pubLeg', ''), 50),
-                    number=self.truncate_text(pub_data.get('pubNr', ''), 50),
-                    session=self.truncate_text(pub_data.get('pubSL', ''), 50),
-                    publication_type=self.truncate_text(pub_data.get('pubTipo', ''), 100),
-                    publication_tp=self.truncate_text(pub_data.get('pubTp', ''), 50),
-                    supplement=self.truncate_text(pub_data.get('supl', ''), 50),
-                    pages=pub_data.get('pag'),
-                    url=self.truncate_text(pub_data.get('URLDiario', ''), MAX_URL_LENGTH),
-                    id_page=self.truncate_text(pub_data.get('idPag', ''), 50),
-                    observation=pub_data.get('obs'),
-                    id_debate=self.truncate_text(pub_data.get('idDeb', ''), 50),
-                    id_intervention=self.truncate_text(pub_data.get('idInt', ''), 50),
-                    id_act=self.truncate_text(pub_data.get('idAct', ''), 50),
-                    final_diary_supplement=self.truncate_text(pub_data.get('pagFinalDiarioSupl', ''), 100),
+                # Check for existing publication
+                date = self.parse_date(pub_data.get('pubdt'))
+                url = self.truncate_text(pub_data.get('URLDiario', ''), MAX_URL_LENGTH)
+                
+                existing_publication = Publication.objects.filter(
+                    date=date,
+                    url=url,
                     phase=phase
-                )
-                publication.save()
+                ).first()
+                
+                if not existing_publication:
+                    publication = Publication(
+                        date=date,
+                        legislature_code=self.truncate_text(pub_data.get('pubLeg', ''), 50),
+                        number=self.truncate_text(pub_data.get('pubNr', ''), 50),
+                        session=self.truncate_text(pub_data.get('pubSL', ''), 50),
+                        publication_type=self.truncate_text(pub_data.get('pubTipo', ''), 100),
+                        publication_tp=self.truncate_text(pub_data.get('pubTp', ''), 50),
+                        supplement=self.truncate_text(pub_data.get('supl', ''), 50),
+                        pages=pub_data.get('pag'),
+                        url=url,
+                        id_page=self.truncate_text(pub_data.get('idPag', ''), 50),
+                        observation=pub_data.get('obs'),
+                        id_debate=self.truncate_text(pub_data.get('idDeb', ''), 50),
+                        id_intervention=self.truncate_text(pub_data.get('idInt', ''), 50),
+                        id_act=self.truncate_text(pub_data.get('idAct', ''), 50),
+                        final_diary_supplement=self.truncate_text(pub_data.get('pagFinalDiarioSupl', ''), 100),
+                        phase=phase
+                    )
+                    publication.save()
             except Exception as e:
                 logger.warning(f"Error saving publication: {str(e)}")
 
@@ -492,35 +515,66 @@ class Command(BaseCommand):
                 continue
                 
             try:
-                commission = Commission(
-                    name=self.truncate_text(comm_data.get('Nome', ''), 500),
-                    number=self.truncate_text(comm_data.get('Numero', ''), 50),
-                    id_commission=self.truncate_text(comm_data.get('IdComissao', ''), 50),
-                    acc_id=self.truncate_text(comm_data.get('AccId', ''), 50),
-                    competent=self.truncate_text(comm_data.get('Competente', ''), 10),
-                    observation=comm_data.get('Observacao'),
-                    distribution_date=self.parse_date(comm_data.get('DataDistribuicao')),
-                    subcommission_distribution=comm_data.get('DistribuicaoSubcomissao'),
-                    subcommission_distribution_date=self.parse_date(comm_data.get('DataDistruibuicaoSubcomissao')),
-                    entry_date=self.parse_date(comm_data.get('DataEntrada')),
-                    public_appreciation_start_date=self.parse_date(comm_data.get('DatainicioApreciacaoPublica')),
-                    public_appreciation_end_date=self.parse_date(comm_data.get('DatafimApreciacaoPublica')),
-                    no_opinion_reason_date=self.parse_date(comm_data.get('DataMotivoNaoParecer')),
-                    report_date=self.parse_date(comm_data.get('DataRelatorio')),
-                    forwarding_date=self.parse_date(comm_data.get('DataRemessa')),
-                    plenary_scheduling_request_date=self.parse_date(comm_data.get('DataReqAgendamentoPlenario')),
-                    awaits_plenary_scheduling=self.truncate_text(comm_data.get('AguardaAgendamentoPlenario', ''), 50),
-                    plenary_scheduling_date=self.parse_date(comm_data.get('DataAgendamentoPlenario')),
-                    discussion_scheduling_date=self.parse_date(comm_data.get('DataAgendamentoDiscussao')),
-                    plenary_scheduling_gp=self.truncate_text(comm_data.get('GpAgendamentoPlenario', ''), 50),
-                    no_opinion_reason=comm_data.get('MotivoNaoParecer'),
-                    extended=self.truncate_text(comm_data.get('Prorrogado', ''), 10),
-                    sigla=self.truncate_text(comm_data.get('Sigla', ''), 50),
-                    legislature_ref=self.truncate_text(comm_data.get('Legislatura', ''), 50),
-                    session_ref=self.truncate_text(comm_data.get('Sessao', ''), 50),
+                # Check for existing commission
+                name = self.truncate_text(comm_data.get('Nome', ''), 500)
+                id_commission = self.truncate_text(comm_data.get('IdComissao', ''), 50)
+                
+                existing_commission = Commission.objects.filter(
+                    name=name,
+                    id_commission=id_commission,
                     phase=phase
-                )
-                commission.save()
+                ).first()
+                
+                if existing_commission:
+                    commission = existing_commission
+                    # Update fields
+                    commission.number = self.truncate_text(comm_data.get('Numero', ''), 50)
+                    commission.acc_id = self.truncate_text(comm_data.get('AccId', ''), 50)
+                    commission.competent = self.truncate_text(comm_data.get('Competente', ''), 10)
+                    commission.observation = comm_data.get('Observacao')
+                    commission.distribution_date = self.parse_date(comm_data.get('DataDistribuicao'))
+                    commission.save()
+                    
+                    # Clear existing relations
+                    commission.documents.all().delete()
+                    commission.rapporteurs.all().delete()
+                    commission.received_opinions.all().delete()
+                    commission.opinion_requests.all().delete()
+                    commission.hearings.all().delete()
+                    commission.audiences.all().delete()
+                    commission.votes.all().delete()
+                    commission.final_draft_submissions.all().delete()
+                    commission.forwardings.all().delete()
+                else:
+                    commission = Commission(
+                        name=name,
+                        number=self.truncate_text(comm_data.get('Numero', ''), 50),
+                        id_commission=id_commission,
+                        acc_id=self.truncate_text(comm_data.get('AccId', ''), 50),
+                        competent=self.truncate_text(comm_data.get('Competente', ''), 10),
+                        observation=comm_data.get('Observacao'),
+                        distribution_date=self.parse_date(comm_data.get('DataDistribuicao')),
+                        subcommission_distribution=comm_data.get('DistribuicaoSubcomissao'),
+                        subcommission_distribution_date=self.parse_date(comm_data.get('DataDistruibuicaoSubcomissao')),
+                        entry_date=self.parse_date(comm_data.get('DataEntrada')),
+                        public_appreciation_start_date=self.parse_date(comm_data.get('DatainicioApreciacaoPublica')),
+                        public_appreciation_end_date=self.parse_date(comm_data.get('DatafimApreciacaoPublica')),
+                        no_opinion_reason_date=self.parse_date(comm_data.get('DataMotivoNaoParecer')),
+                        report_date=self.parse_date(comm_data.get('DataRelatorio')),
+                        forwarding_date=self.parse_date(comm_data.get('DataRemessa')),
+                        plenary_scheduling_request_date=self.parse_date(comm_data.get('DataReqAgendamentoPlenario')),
+                        awaits_plenary_scheduling=self.truncate_text(comm_data.get('AguardaAgendamentoPlenario', ''), 50),
+                        plenary_scheduling_date=self.parse_date(comm_data.get('DataAgendamentoPlenario')),
+                        discussion_scheduling_date=self.parse_date(comm_data.get('DataAgendamentoDiscussao')),
+                        plenary_scheduling_gp=self.truncate_text(comm_data.get('GpAgendamentoPlenario', ''), 50),
+                        no_opinion_reason=comm_data.get('MotivoNaoParecer'),
+                        extended=self.truncate_text(comm_data.get('Prorrogado', ''), 10),
+                        sigla=self.truncate_text(comm_data.get('Sigla', ''), 50),
+                        legislature_ref=self.truncate_text(comm_data.get('Legislatura', ''), 50),
+                        session_ref=self.truncate_text(comm_data.get('Sessao', ''), 50),
+                        phase=phase
+                    )
+                    commission.save()
                 
                 # Process commission documents
                 if comm_data.get('Documentos'):
@@ -530,14 +584,25 @@ class Command(BaseCommand):
                             continue
                             
                         try:
-                            doc = CommissionDocument(
-                                title=self.truncate_text(doc_data.get('TituloDocumento', ''), MAX_TITLE_LENGTH),
-                                document_type=self.truncate_text(doc_data.get('TipoDocumento', ''), 100),
-                                date=self.parse_date(doc_data.get('DataDocumento')),
-                                url=self.truncate_text(doc_data.get('URL', ''), MAX_URL_LENGTH),
+                            # Check for existing document
+                            title = self.truncate_text(doc_data.get('TituloDocumento', ''), MAX_TITLE_LENGTH)
+                            url = self.truncate_text(doc_data.get('URL', ''), MAX_URL_LENGTH)
+                            
+                            existing_doc = CommissionDocument.objects.filter(
+                                title=title,
+                                url=url,
                                 commission=commission
-                            )
-                            doc.save()
+                            ).first()
+                            
+                            if not existing_doc:
+                                doc = CommissionDocument(
+                                    title=title,
+                                    document_type=self.truncate_text(doc_data.get('TipoDocumento', ''), 100),
+                                    date=self.parse_date(doc_data.get('DataDocumento')),
+                                    url=url,
+                                    commission=commission
+                                )
+                                doc.save()
                         except Exception as e:
                             logger.warning(f"Error saving commission document: {str(e)}")
                         
@@ -549,13 +614,24 @@ class Command(BaseCommand):
                             continue
                             
                         try:
-                            rapporteur = Rapporteur(
-                                name=self.truncate_text(rel_data.get('nome', ''), MAX_NAME_LENGTH),
-                                party=self.truncate_text(rel_data.get('GP', ''), 100),
-                                date=self.parse_date(rel_data.get('data')),
+                            # Check for existing rapporteur
+                            name = self.truncate_text(rel_data.get('nome', ''), MAX_NAME_LENGTH)
+                            date = self.parse_date(rel_data.get('data'))
+                            
+                            existing_rapporteur = Rapporteur.objects.filter(
+                                name=name,
+                                date=date,
                                 commission=commission
-                            )
-                            rapporteur.save()
+                            ).first()
+                            
+                            if not existing_rapporteur:
+                                rapporteur = Rapporteur(
+                                    name=name,
+                                    party=self.truncate_text(rel_data.get('GP', ''), 100),
+                                    date=date,
+                                    commission=commission
+                                )
+                                rapporteur.save()
                         except Exception as e:
                             logger.warning(f"Error saving rapporteur: {str(e)}")
                     
@@ -567,14 +643,25 @@ class Command(BaseCommand):
                             continue
                             
                         try:
-                            opinion = Opinion(
-                                entity=self.truncate_text(op_data.get('entidade', ''), MAX_NAME_LENGTH),
-                                date=self.parse_date(op_data.get('data')),
-                                url=self.truncate_text(op_data.get('url', ''), MAX_URL_LENGTH),
-                                document_type=self.truncate_text(op_data.get('tipoDocumento', ''), 100),
+                            # Check for existing opinion
+                            entity = self.truncate_text(op_data.get('entidade', ''), MAX_NAME_LENGTH)
+                            date = self.parse_date(op_data.get('data'))
+                            
+                            existing_opinion = Opinion.objects.filter(
+                                entity=entity,
+                                date=date,
                                 commission=commission
-                            )
-                            opinion.save()
+                            ).first()
+                            
+                            if not existing_opinion:
+                                opinion = Opinion(
+                                    entity=entity,
+                                    date=date,
+                                    url=self.truncate_text(op_data.get('url', ''), MAX_URL_LENGTH),
+                                    document_type=self.truncate_text(op_data.get('tipoDocumento', ''), 100),
+                                    commission=commission
+                                )
+                                opinion.save()
                         except Exception as e:
                             logger.warning(f"Error saving opinion: {str(e)}")
                     
@@ -586,12 +673,23 @@ class Command(BaseCommand):
                             continue
                             
                         try:
-                            request = OpinionRequest(
-                                entity=self.truncate_text(req_data.get('entidade', ''), MAX_NAME_LENGTH),
-                                date=self.parse_date(req_data.get('data')),
+                            # Check for existing request
+                            entity = self.truncate_text(req_data.get('entidade', ''), MAX_NAME_LENGTH)
+                            date = self.parse_date(req_data.get('data'))
+                            
+                            existing_request = OpinionRequest.objects.filter(
+                                entity=entity,
+                                date=date,
                                 commission=commission
-                            )
-                            request.save()
+                            ).first()
+                            
+                            if not existing_request:
+                                request = OpinionRequest(
+                                    entity=entity,
+                                    date=date,
+                                    commission=commission
+                                )
+                                request.save()
                         except Exception as e:
                             logger.warning(f"Error saving opinion request: {str(e)}")
                     
@@ -603,12 +701,23 @@ class Command(BaseCommand):
                             continue
                             
                         try:
-                            hearing = Hearing(
-                                entity=self.truncate_text(hear_data.get('entidade', ''), MAX_NAME_LENGTH),
-                                date=self.parse_date(hear_data.get('data')),
+                            # Check for existing hearing
+                            entity = self.truncate_text(hear_data.get('entidade', ''), MAX_NAME_LENGTH)
+                            date = self.parse_date(hear_data.get('data'))
+                            
+                            existing_hearing = Hearing.objects.filter(
+                                entity=entity,
+                                date=date,
                                 commission=commission
-                            )
-                            hearing.save()
+                            ).first()
+                            
+                            if not existing_hearing:
+                                hearing = Hearing(
+                                    entity=entity,
+                                    date=date,
+                                    commission=commission
+                                )
+                                hearing.save()
                         except Exception as e:
                             logger.warning(f"Error saving hearing: {str(e)}")
                     
@@ -620,12 +729,23 @@ class Command(BaseCommand):
                             continue
                             
                         try:
-                            audience = Audience(
-                                entity=self.truncate_text(aud_data.get('entidade', ''), MAX_NAME_LENGTH),
-                                date=self.parse_date(aud_data.get('data')),
+                            # Check for existing audience
+                            entity = self.truncate_text(aud_data.get('entidade', ''), MAX_NAME_LENGTH)
+                            date = self.parse_date(aud_data.get('data'))
+                            
+                            existing_audience = Audience.objects.filter(
+                                entity=entity,
+                                date=date,
                                 commission=commission
-                            )
-                            audience.save()
+                            ).first()
+                            
+                            if not existing_audience:
+                                audience = Audience(
+                                    entity=entity,
+                                    date=date,
+                                    commission=commission
+                                )
+                                audience.save()
                         except Exception as e:
                             logger.warning(f"Error saving audience: {str(e)}")
                     
@@ -637,15 +757,26 @@ class Command(BaseCommand):
                             continue
                             
                         try:
-                            vote = CommissionVote(
-                                date=self.parse_date(vote_data.get('data')),
-                                result=self.truncate_text(vote_data.get('resultado', ''), 100),
-                                favor=vote_data.get('favor'),
-                                against=vote_data.get('contra'),
-                                abstention=vote_data.get('abstencao'),
+                            # Check for existing commission vote
+                            date = self.parse_date(vote_data.get('data'))
+                            result = self.truncate_text(vote_data.get('resultado', ''), 100)
+                            
+                            existing_vote = CommissionVote.objects.filter(
+                                date=date,
+                                result=result,
                                 commission=commission
-                            )
-                            vote.save()
+                            ).first()
+                            
+                            if not existing_vote:
+                                vote = CommissionVote(
+                                    date=date,
+                                    result=result,
+                                    favor=vote_data.get('favor'),
+                                    against=vote_data.get('contra'),
+                                    abstention=vote_data.get('abstencao'),
+                                    commission=commission
+                                )
+                                vote.save()
                         except Exception as e:
                             logger.warning(f"Error saving commission vote: {str(e)}")
                     
@@ -657,12 +788,21 @@ class Command(BaseCommand):
                             continue
                             
                         try:
-                            submission = FinalDraftSubmission(
-                                date=self.parse_date(sub_data.get('data')),
-                                text=sub_data.get('texto'),
+                            # Check for existing submission
+                            date = self.parse_date(sub_data.get('data'))
+                            
+                            existing_submission = FinalDraftSubmission.objects.filter(
+                                date=date,
                                 commission=commission
-                            )
-                            submission.save()
+                            ).first()
+                            
+                            if not existing_submission:
+                                submission = FinalDraftSubmission(
+                                    date=date,
+                                    text=sub_data.get('texto'),
+                                    commission=commission
+                                )
+                                submission.save()
                         except Exception as e:
                             logger.warning(f"Error saving final draft submission: {str(e)}")
                     
@@ -674,12 +814,23 @@ class Command(BaseCommand):
                             continue
                             
                         try:
-                            forwarding = Forwarding(
-                                entity=self.truncate_text(fw_data.get('entidade', ''), MAX_NAME_LENGTH),
-                                date=self.parse_date(fw_data.get('data')),
+                            # Check for existing forwarding
+                            entity = self.truncate_text(fw_data.get('entidade', ''), MAX_NAME_LENGTH)
+                            date = self.parse_date(fw_data.get('data'))
+                            
+                            existing_forwarding = Forwarding.objects.filter(
+                                entity=entity,
+                                date=date,
                                 commission=commission
-                            )
-                            forwarding.save()
+                            ).first()
+                            
+                            if not existing_forwarding:
+                                forwarding = Forwarding(
+                                    entity=entity,
+                                    date=date,
+                                    commission=commission
+                                )
+                                forwarding.save()
                         except Exception as e:
                             logger.warning(f"Error saving forwarding: {str(e)}")
             except Exception as e:
@@ -696,17 +847,43 @@ class Command(BaseCommand):
                 continue
                 
             try:
-                debate = Debate(
-                    date=self.parse_date(deb_data.get('dataReuniaoPlenaria')),
-                    phase=self.truncate_text(deb_data.get('faseDebate', ''), 100),
-                    session_phase=self.truncate_text(deb_data.get('faseSessao', ''), 10),
-                    start_time=self.truncate_text(deb_data.get('horaInicio', ''), 10),
-                    end_time=self.truncate_text(deb_data.get('horaTermo', ''), 10),
-                    summary=deb_data.get('sumario'),
-                    content=deb_data.get('teor'),
+                # Check for existing debate
+                date = self.parse_date(deb_data.get('dataReuniaoPlenaria'))
+                phase_name = self.truncate_text(deb_data.get('faseDebate', ''), 100)
+                
+                existing_debate = Debate.objects.filter(
+                    date=date,
+                    phase=phase_name,
                     phase_link=phase
-                )
-                debate.save()
+                ).first()
+                
+                if existing_debate:
+                    debate = existing_debate
+                    # Update fields
+                    debate.session_phase = self.truncate_text(deb_data.get('faseSessao', ''), 10)
+                    debate.start_time = self.truncate_text(deb_data.get('horaInicio', ''), 10)
+                    debate.end_time = self.truncate_text(deb_data.get('horaTermo', ''), 10)
+                    debate.summary = deb_data.get('sumario')
+                    debate.content = deb_data.get('teor')
+                    debate.save()
+                    
+                    # Clear existing relations
+                    debate.video_links.all().delete()
+                    debate.deputies.all().delete()
+                    debate.government_members.all().delete()
+                    debate.guests.all().delete()
+                else:
+                    debate = Debate(
+                        date=date,
+                        phase=phase_name,
+                        session_phase=self.truncate_text(deb_data.get('faseSessao', ''), 10),
+                        start_time=self.truncate_text(deb_data.get('horaInicio', ''), 10),
+                        end_time=self.truncate_text(deb_data.get('horaTermo', ''), 10),
+                        summary=deb_data.get('sumario'),
+                        content=deb_data.get('teor'),
+                        phase_link=phase
+                    )
+                    debate.save()
                 
                 # Process video links
                 if deb_data.get('linkVideo'):
@@ -716,11 +893,20 @@ class Command(BaseCommand):
                             continue
                             
                         try:
-                            link = VideoLink(
-                                url=self.truncate_text(link_data.get('link', ''), MAX_URL_LENGTH),
+                            # Check for existing video link
+                            url = self.truncate_text(link_data.get('link', ''), MAX_URL_LENGTH)
+                            
+                            existing_link = VideoLink.objects.filter(
+                                url=url,
                                 debate=debate
-                            )
-                            link.save()
+                            ).first()
+                            
+                            if not existing_link:
+                                link = VideoLink(
+                                    url=url,
+                                    debate=debate
+                                )
+                                link.save()
                         except Exception as e:
                             logger.warning(f"Error saving video link: {str(e)}")
                 
@@ -732,12 +918,21 @@ class Command(BaseCommand):
                             continue
                             
                         try:
-                            deputy = DeputyDebate(
-                                name=self.truncate_text(dep_data.get('nome', ''), MAX_NAME_LENGTH),
-                                party=self.truncate_text(dep_data.get('GP', ''), 100),
+                            # Check for existing deputy
+                            name = self.truncate_text(dep_data.get('nome', ''), MAX_NAME_LENGTH)
+                            
+                            existing_deputy = DeputyDebate.objects.filter(
+                                name=name,
                                 debate=debate
-                            )
-                            deputy.save()
+                            ).first()
+                            
+                            if not existing_deputy:
+                                deputy = DeputyDebate(
+                                    name=name,
+                                    party=self.truncate_text(dep_data.get('GP', ''), 100),
+                                    debate=debate
+                                )
+                                deputy.save()
                         except Exception as e:
                             logger.warning(f"Error saving deputy debate: {str(e)}")
                 
@@ -746,13 +941,22 @@ class Command(BaseCommand):
                     gov_data = deb_data.get('membrosGoverno')
                     if gov_data and isinstance(gov_data, dict):
                         try:
-                            member = GovernmentMemberDebate(
-                                name=self.truncate_text(gov_data.get('nome', ''), MAX_NAME_LENGTH),
-                                position=self.truncate_text(gov_data.get('cargo', ''), MAX_NAME_LENGTH),
-                                government=self.truncate_text(gov_data.get('governo', ''), MAX_NAME_LENGTH),
+                            # Check for existing government member
+                            name = self.truncate_text(gov_data.get('nome', ''), MAX_NAME_LENGTH)
+                            
+                            existing_member = GovernmentMemberDebate.objects.filter(
+                                name=name,
                                 debate=debate
-                            )
-                            member.save()
+                            ).first()
+                            
+                            if not existing_member:
+                                member = GovernmentMemberDebate(
+                                    name=name,
+                                    position=self.truncate_text(gov_data.get('cargo', ''), MAX_NAME_LENGTH),
+                                    government=self.truncate_text(gov_data.get('governo', ''), MAX_NAME_LENGTH),
+                                    debate=debate
+                                )
+                                member.save()
                         except Exception as e:
                             logger.warning(f"Error saving government member debate: {str(e)}")
                 
@@ -761,14 +965,23 @@ class Command(BaseCommand):
                     guest_data = deb_data.get('convidados')
                     if guest_data and isinstance(guest_data, dict):
                         try:
-                            guest = GuestDebate(
-                                name=self.truncate_text(guest_data.get('nome', ''), MAX_NAME_LENGTH) if guest_data.get('nome') else "Unnamed Guest",
-                                position=self.truncate_text(guest_data.get('cargo', ''), MAX_NAME_LENGTH),
-                                honor=self.truncate_text(guest_data.get('honra', ''), MAX_NAME_LENGTH),
-                                country=self.truncate_text(guest_data.get('pais', ''), 100),
+                            # Check for existing guest
+                            name = self.truncate_text(guest_data.get('nome', ''), MAX_NAME_LENGTH) if guest_data.get('nome') else "Unnamed Guest"
+                            
+                            existing_guest = GuestDebate.objects.filter(
+                                name=name,
                                 debate=debate
-                            )
-                            guest.save()
+                            ).first()
+                            
+                            if not existing_guest:
+                                guest = GuestDebate(
+                                    name=name,
+                                    position=self.truncate_text(guest_data.get('cargo', ''), MAX_NAME_LENGTH),
+                                    honor=self.truncate_text(guest_data.get('honra', ''), MAX_NAME_LENGTH),
+                                    country=self.truncate_text(guest_data.get('pais', ''), 100),
+                                    debate=debate
+                                )
+                                guest.save()
                         except Exception as e:
                             logger.warning(f"Error saving guest debate: {str(e)}")
             except Exception as e:
@@ -783,23 +996,45 @@ class Command(BaseCommand):
             try:
                 if isinstance(text_data, dict):
                     # Handle dictionary case
-                    text = ApprovedText(
-                        title=self.truncate_text(text_data.get('titulo', ''), MAX_TITLE_LENGTH),
-                        text_type=self.truncate_text(text_data.get('tipo', ''), 100),
-                        date=self.parse_date(text_data.get('data')),
-                        url=self.truncate_text(text_data.get('url', ''), MAX_URL_LENGTH),
+                    title = self.truncate_text(text_data.get('titulo', ''), MAX_TITLE_LENGTH)
+                    text_type = self.truncate_text(text_data.get('tipo', ''), 100)
+                    date = self.parse_date(text_data.get('data'))
+                    url = self.truncate_text(text_data.get('url', ''), MAX_URL_LENGTH)
+                    
+                    # Check for existing text
+                    existing_text = ApprovedText.objects.filter(
+                        title=title,
+                        text_type=text_type,
                         phase=phase
-                    )
-                    text.save()
+                    ).first()
+                    
+                    if not existing_text:
+                        text = ApprovedText(
+                            title=title,
+                            text_type=text_type,
+                            date=date,
+                            url=url,
+                            phase=phase
+                        )
+                        text.save()
                 elif isinstance(text_data, str):
                     # Handle string case
                     logger.warning(f"Approved text is a string: {text_data[:30]}...")
-                    text = ApprovedText(
-                        title=self.truncate_text(text_data, MAX_TITLE_LENGTH),
-                        text_type="Unknown",
+                    title = self.truncate_text(text_data, MAX_TITLE_LENGTH)
+                    
+                    # Check for existing text
+                    existing_text = ApprovedText.objects.filter(
+                        title=title,
                         phase=phase
-                    )
-                    text.save()
+                    ).first()
+                    
+                    if not existing_text:
+                        text = ApprovedText(
+                            title=title,
+                            text_type="Unknown",
+                            phase=phase
+                        )
+                        text.save()
                 else:
                     # Handle any other type
                     logger.warning(f"Unexpected approved text data type: {type(text_data)}")
@@ -817,13 +1052,24 @@ class Command(BaseCommand):
                 continue
                 
             try:
-                appeal = DeputyAppeal(
-                    deputy_name=self.truncate_text(appeal_data.get('nome', ''), MAX_NAME_LENGTH),
-                    party=self.truncate_text(appeal_data.get('GP', ''), 100),
-                    date=self.parse_date(appeal_data.get('data')),
+                # Check for existing appeal
+                deputy_name = self.truncate_text(appeal_data.get('nome', ''), MAX_NAME_LENGTH)
+                date = self.parse_date(appeal_data.get('data'))
+                
+                existing_appeal = DeputyAppeal.objects.filter(
+                    deputy_name=deputy_name,
+                    date=date,
                     phase=phase
-                )
-                appeal.save()
+                ).first()
+                
+                if not existing_appeal:
+                    appeal = DeputyAppeal(
+                        deputy_name=deputy_name,
+                        party=self.truncate_text(appeal_data.get('GP', ''), 100),
+                        date=date,
+                        phase=phase
+                    )
+                    appeal.save()
             except Exception as e:
                 logger.warning(f"Error saving deputy appeal: {str(e)}")
 
@@ -838,12 +1084,23 @@ class Command(BaseCommand):
                 continue
                 
             try:
-                appeal = PartyAppeal(
-                    party=self.truncate_text(appeal_data.get('GP', ''), 100),
-                    date=self.parse_date(appeal_data.get('data')),
+                # Check for existing appeal
+                party = self.truncate_text(appeal_data.get('GP', ''), 100)
+                date = self.parse_date(appeal_data.get('data'))
+                
+                existing_appeal = PartyAppeal.objects.filter(
+                    party=party,
+                    date=date,
                     phase=phase
-                )
-                appeal.save()
+                ).first()
+                
+                if not existing_appeal:
+                    appeal = PartyAppeal(
+                        party=party,
+                        date=date,
+                        phase=phase
+                    )
+                    appeal.save()
             except Exception as e:
                 logger.warning(f"Error saving party appeal: {str(e)}")
 
@@ -862,51 +1119,103 @@ class Command(BaseCommand):
                 details = vote_data.get('detalhe')
                 parsed_votes = self.parse_vote_details(details) if details else None
                 
-                # Create vote object with parsed data
-                vote = Vote(
-                    date=self.parse_date(vote_data.get('data')),
-                    result=self.truncate_text(vote_data.get('resultado', ''), 50),
-                    details=details,  # Keep original details for backward compatibility
-                    description=vote_data.get('descricao'),
-                    votes=parsed_votes or vote_data,  # Store parsed votes or original data
-                    meeting=self.truncate_text(vote_data.get('reuniao', ''), 50),
-                    meeting_type=self.truncate_text(vote_data.get('tipoReuniao', ''), 50),
-                    unanimous=self.truncate_text(vote_data.get('unanime', ''), 50),
-                    absences=vote_data.get('ausencias'),
-                    vote_id=self.truncate_text(vote_data.get('id', ''), 50)
-                )
-                vote.save()
+                # First check if a vote with the same identifiers exists
+                existing_vote = None
+                vote_id = self.truncate_text(vote_data.get('id', ''), 50)
+                date = self.parse_date(vote_data.get('data'))
+                result = self.truncate_text(vote_data.get('resultado', ''), 50)
                 
-                # Link to projeto_lei
-                projeto_lei.votes.add(vote)
+                if vote_id:
+                    existing_vote = Vote.objects.filter(vote_id=vote_id).first()
+                
+                # If we couldn't find by ID, try other identifying fields
+                if not existing_vote and date and result:
+                    existing_vote = Vote.objects.filter(
+                        date=date,
+                        result=result,
+                        details=details
+                    ).first()
+                
+                if existing_vote:
+                    # Update existing vote
+                    existing_vote.description = vote_data.get('descricao') or existing_vote.description
+                    if parsed_votes:
+                        existing_vote.votes = parsed_votes
+                    elif vote_data and not existing_vote.votes:
+                        existing_vote.votes = vote_data
+                    existing_vote.meeting = self.truncate_text(vote_data.get('reuniao', ''), 50) or existing_vote.meeting
+                    existing_vote.meeting_type = self.truncate_text(vote_data.get('tipoReuniao', ''), 50) or existing_vote.meeting_type
+                    existing_vote.unanimous = self.truncate_text(vote_data.get('unanime', ''), 50) or existing_vote.unanimous
+                    existing_vote.absences = vote_data.get('ausencias') or existing_vote.absences
+                    existing_vote.vote_id = vote_id or existing_vote.vote_id
+                    existing_vote.save()
+                    vote = existing_vote
+                    
+                    # We'll handle publications for this vote below
+                else:
+                    # Create new vote
+                    vote = Vote(
+                        date=date,
+                        result=result,
+                        details=details,  # Keep original details for backward compatibility
+                        description=vote_data.get('descricao'),
+                        votes=parsed_votes or vote_data,  # Store parsed votes or original data
+                        meeting=self.truncate_text(vote_data.get('reuniao', ''), 50),
+                        meeting_type=self.truncate_text(vote_data.get('tipoReuniao', ''), 50),
+                        unanimous=self.truncate_text(vote_data.get('unanime', ''), 50),
+                        absences=vote_data.get('ausencias'),
+                        vote_id=vote_id
+                    )
+                    vote.save()
+                
+                # Link to projeto_lei if not already linked
+                if not projeto_lei.votes.filter(id=vote.id).exists():
+                    projeto_lei.votes.add(vote)
                 
                 # Process vote publications
                 if vote_data.get('publicacao'):
+                    # Clear existing publications for this vote to avoid duplicates
+                    # Only if it's an existing vote that we're updating
+                    if existing_vote:
+                        vote.publications.all().delete()
+                        
                     for pub_data in vote_data.get('publicacao', []):
                         if not isinstance(pub_data, dict):
                             logger.warning(f"Unexpected vote publication data type: {type(pub_data)}")
                             continue
                             
                         try:
-                            publication = Publication(
-                                date=self.parse_date(pub_data.get('pubdt')),
-                                legislature_code=self.truncate_text(pub_data.get('pubLeg', ''), 50),
-                                number=self.truncate_text(pub_data.get('pubNr', ''), 50),
-                                session=self.truncate_text(pub_data.get('pubSL', ''), 50),
-                                publication_type=self.truncate_text(pub_data.get('pubTipo', ''), 100),
-                                publication_tp=self.truncate_text(pub_data.get('pubTp', ''), 50),
-                                supplement=self.truncate_text(pub_data.get('supl', ''), 50),
-                                pages=pub_data.get('pag'),
-                                url=self.truncate_text(pub_data.get('URLDiario', ''), MAX_URL_LENGTH),
-                                id_page=self.truncate_text(pub_data.get('idPag', ''), 50),
-                                observation=pub_data.get('obs'),
-                                id_debate=self.truncate_text(pub_data.get('idDeb', ''), 50),
-                                id_intervention=self.truncate_text(pub_data.get('idInt', ''), 50),
-                                id_act=self.truncate_text(pub_data.get('idAct', ''), 50),
-                                final_diary_supplement=self.truncate_text(pub_data.get('pagFinalDiarioSupl', ''), 100),
+                            # Check for existing publication
+                            date = self.parse_date(pub_data.get('pubdt'))
+                            url = self.truncate_text(pub_data.get('URLDiario', ''), MAX_URL_LENGTH)
+                            
+                            # Even with the clear above, it's good practice to check
+                            existing_publication = Publication.objects.filter(
+                                date=date,
+                                url=url,
                                 vote=vote
-                            )
-                            publication.save()
+                            ).first()
+                            
+                            if not existing_publication:
+                                publication = Publication(
+                                    date=date,
+                                    legislature_code=self.truncate_text(pub_data.get('pubLeg', ''), 50),
+                                    number=self.truncate_text(pub_data.get('pubNr', ''), 50),
+                                    session=self.truncate_text(pub_data.get('pubSL', ''), 50),
+                                    publication_type=self.truncate_text(pub_data.get('pubTipo', ''), 100),
+                                    publication_tp=self.truncate_text(pub_data.get('pubTp', ''), 50),
+                                    supplement=self.truncate_text(pub_data.get('supl', ''), 50),
+                                    pages=pub_data.get('pag'),
+                                    url=url,
+                                    id_page=self.truncate_text(pub_data.get('idPag', ''), 50),
+                                    observation=pub_data.get('obs'),
+                                    id_debate=self.truncate_text(pub_data.get('idDeb', ''), 50),
+                                    id_intervention=self.truncate_text(pub_data.get('idInt', ''), 50),
+                                    id_act=self.truncate_text(pub_data.get('idAct', ''), 50),
+                                    final_diary_supplement=self.truncate_text(pub_data.get('pagFinalDiarioSupl', ''), 100),
+                                    vote=vote
+                                )
+                                publication.save()
                         except Exception as e:
                             logger.warning(f"Error saving vote publication: {str(e)}")
             except Exception as e:
@@ -923,17 +1232,28 @@ class Command(BaseCommand):
                 continue
                 
             try:
-                related = RelatedInitiative(
-                    initiative_id=self.truncate_text(rel_data.get('id', ''), 50),
-                    initiative_type=self.truncate_text(rel_data.get('descTipo', ''), 100),
-                    initiative_number=self.truncate_text(rel_data.get('nr', ''), 50),
-                    legislature=self.truncate_text(rel_data.get('leg', ''), 50),
-                    title=rel_data.get('titulo'),
-                    entry_date=self.parse_date(rel_data.get('dataEntrada')),
-                    selection=self.truncate_text(rel_data.get('sel', ''), 10),
+                # Check for existing related initiative
+                initiative_id = self.truncate_text(rel_data.get('id', ''), 50)
+                initiative_number = self.truncate_text(rel_data.get('nr', ''), 50)
+                
+                existing_initiative = RelatedInitiative.objects.filter(
+                    initiative_id=initiative_id,
+                    initiative_number=initiative_number,
                     phase=phase
-                )
-                related.save()
+                ).first()
+                
+                if not existing_initiative:
+                    related = RelatedInitiative(
+                        initiative_id=initiative_id,
+                        initiative_type=self.truncate_text(rel_data.get('descTipo', ''), 100),
+                        initiative_number=initiative_number,
+                        legislature=self.truncate_text(rel_data.get('leg', ''), 50),
+                        title=rel_data.get('titulo'),
+                        entry_date=self.parse_date(rel_data.get('dataEntrada')),
+                        selection=self.truncate_text(rel_data.get('sel', ''), 10),
+                        phase=phase
+                    )
+                    related.save()
             except Exception as e:
                 logger.warning(f"Error saving related initiative: {str(e)}")
 
@@ -970,3 +1290,26 @@ class Command(BaseCommand):
             return text
         
         return text[:max_length]
+        
+    def log_stats(self):
+        """Log import statistics to help with debugging"""
+        stats = {
+            'projetos_lei': ProjetoLei.objects.count(),
+            'authors': Author.objects.count(),
+            'phases': Phase.objects.count(),
+            'votes': Vote.objects.count(),
+            'publications': Publication.objects.count(),
+            'attachments': Attachment.objects.count(),
+            'commissions': Commission.objects.count(),
+            'debates': Debate.objects.count()
+        }
+        
+        logger.info("Current database statistics:")
+        for key, value in stats.items():
+            logger.info(f"  {key}: {value}")
+            
+        # Additional vote statistics for debugging
+        vote_results = Vote.objects.values('result').annotate(count=Count('id')).order_by('-count')
+        logger.info("Vote results breakdown:")
+        for result in vote_results[:10]:  # Show top 10 results
+            logger.info(f"  {result['result']}: {result['count']}")
