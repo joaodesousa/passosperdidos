@@ -1,7 +1,8 @@
 import json
 import logging
 import traceback
-import re  # Added for regex pattern matching
+import re
+import requests
 from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.db import transaction
