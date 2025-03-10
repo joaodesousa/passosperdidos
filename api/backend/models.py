@@ -317,6 +317,7 @@ class ProjetoLei(models.Model):
     type = models.CharField(max_length=255, db_index=True)
     legislature = models.ForeignKey(Legislature, on_delete=models.CASCADE, related_name="projetos_lei")
     date = models.DateField(null=True)
+    link = models.URLField(max_length=1000, blank=True, null=True)
     description = models.TextField(null=True, blank=True)
     external_id = models.CharField(max_length=1000, unique=True, db_index=True)
     authors = models.ManyToManyField(Author, related_name="projetos_lei")
@@ -324,7 +325,7 @@ class ProjetoLei(models.Model):
     attachments = models.ManyToManyField(Attachment, related_name="projetos_lei", blank=True)
     votes = models.ManyToManyField(Vote, related_name="projetos_lei", blank=True)
     related_initiatives = models.ManyToManyField("self", symmetrical=False, related_name="related_to", blank=True)
-    publication_url = models.URLField(max_length=1000 ,null=True, blank=True)
+    publication_url = models.URLField(max_length=1000, null=True, blank=True)
     publication_date = models.DateField(null=True, blank=True)
 
     # Additional fields from JSON
