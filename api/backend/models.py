@@ -25,8 +25,8 @@ class Phase(models.Model):
 
 
 class Attachment(models.Model):
-    name = models.CharField(max_length=500)
-    file_url = models.URLField()
+    name = models.CharField(max_length=1000)
+    file_url = models.URLField(max_length=1000)
     phase = models.ForeignKey(Phase, on_delete=models.CASCADE, null=True, blank=True, related_name="attachments")
 
     def __str__(self):
@@ -131,7 +131,7 @@ class CommissionDocument(models.Model):
     title = models.CharField(max_length=500)
     document_type = models.CharField(max_length=100)
     date = models.DateField(null=True, blank=True)
-    url = models.URLField(max_length=500, null=True, blank=True)
+    url = models.URLField(max_length=1000, null=True, blank=True)
     commission = models.ForeignKey(Commission, on_delete=models.CASCADE, related_name="documents")
 
     def __str__(self):
@@ -151,7 +151,7 @@ class Rapporteur(models.Model):
 class Opinion(models.Model):
     entity = models.CharField(max_length=255)
     date = models.DateField(null=True, blank=True)
-    url = models.URLField(max_length=500, null=True, blank=True)
+    url = models.URLField(max_length=1000, null=True, blank=True)
     document_type = models.CharField(max_length=100, null=True, blank=True)
     commission = models.ForeignKey(Commission, on_delete=models.CASCADE, related_name="received_opinions")
 
@@ -272,7 +272,7 @@ class ApprovedText(models.Model):
     title = models.CharField(max_length=500)
     text_type = models.CharField(max_length=100)
     date = models.DateField(null=True, blank=True)
-    url = models.URLField(max_length=500, null=True, blank=True)
+    url = models.URLField(max_length=1000, null=True, blank=True)
     phase = models.ForeignKey(Phase, on_delete=models.CASCADE, null=True, blank=True, related_name="approved_texts")
 
     def __str__(self):
@@ -317,7 +317,6 @@ class ProjetoLei(models.Model):
     type = models.CharField(max_length=255, db_index=True)
     legislature = models.ForeignKey(Legislature, on_delete=models.CASCADE, related_name="projetos_lei")
     date = models.DateField(null=True)
-    link = models.URLField(max_length=500)
     description = models.TextField(null=True, blank=True)
     external_id = models.CharField(max_length=1000, unique=True, db_index=True)
     authors = models.ManyToManyField(Author, related_name="projetos_lei")
@@ -325,7 +324,7 @@ class ProjetoLei(models.Model):
     attachments = models.ManyToManyField(Attachment, related_name="projetos_lei", blank=True)
     votes = models.ManyToManyField(Vote, related_name="projetos_lei", blank=True)
     related_initiatives = models.ManyToManyField("self", symmetrical=False, related_name="related_to", blank=True)
-    publication_url = models.URLField(null=True, blank=True)
+    publication_url = models.URLField(max_length=1000 ,null=True, blank=True)
     publication_date = models.DateField(null=True, blank=True)
 
     # Additional fields from JSON
@@ -338,7 +337,7 @@ class ProjetoLei(models.Model):
     substitute_text_field = models.TextField(null=True, blank=True)
     observation = models.TextField(null=True, blank=True)
     epigraph = models.TextField(null=True, blank=True)
-    text_link = models.URLField(max_length=500, null=True, blank=True)
+    text_link = models.URLField(max_length=1000, null=True, blank=True)
     
     # Special fields for European initiatives
     european_initiatives = models.JSONField(null=True, blank=True)

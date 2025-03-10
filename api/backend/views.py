@@ -338,3 +338,5 @@ class UniquePhaseNamesView(APIView):
         phases = list(Phase.objects.values_list('name', flat=True).distinct().order_by('name'))
         # Return just the names as a list
         return Response(phases)
+
+
