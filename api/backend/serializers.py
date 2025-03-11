@@ -189,12 +189,19 @@ class ProjetoLeiListSerializer(serializers.ModelSerializer):
         }
 
 
+# Simplified Phase serializer for medium detail views
+class PhaseBasicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Phase
+        fields = ['id', 'name', 'date', 'code', 'observation']
+
+
 # Serializer with limited phase data for medium detail
 class ProjetoLeiDetailSerializer(serializers.ModelSerializer):
     legislature = LegislatureSerializer(read_only=True)
     authors = AuthorSerializer(many=True, read_only=True)
     phases = serializers.SerializerMethodField()
-    votes = VoteSerializer(many=True, read_only=True)
+    votes = serializers.SerializerMethodField()
     
     class Meta:
         model = ProjetoLei
@@ -208,12 +215,11 @@ class ProjetoLeiDetailSerializer(serializers.ModelSerializer):
         # Return a simplified version of phases for this view
         phases = obj.phases.all().order_by('date')
         return PhaseBasicSerializer(phases, many=True).data
-
-# Simplified Phase serializer for medium detail views
-class PhaseBasicSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Phase
-        fields = ['id', 'name', 'date', 'code', 'observation']
+    
+    def get_votes(self, obj):
+        # Return chronologically ordered votes
+        votes = obj.votes.all().order_by('date')
+        return VoteSerializer(votes, many=True).data
 
 
 # Full serializer for complete details
@@ -221,7 +227,7 @@ class ProjetoLeiFullSerializer(serializers.ModelSerializer):
     legislature = LegislatureSerializer(read_only=True)
     authors = AuthorSerializer(many=True, read_only=True)
     phases = PhaseSerializer(many=True, read_only=True)
-    votes = VoteSerializer(many=True, read_only=True)
+    votes = serializers.SerializerMethodField()
     related_initiatives = serializers.SerializerMethodField()
     attachments = AttachmentSerializer(many=True, read_only=True)
 
@@ -237,3 +243,8 @@ class ProjetoLeiFullSerializer(serializers.ModelSerializer):
         # Get related initiatives through the many-to-many relationship
         related = obj.related_to.all()
         return ProjetoLeiListSerializer(related, many=True).data
+        
+    def get_votes(self, obj):
+        # Return chronologically ordered votes
+        votes = obj.votes.all().order_by('date')
+        return VoteSerializer(votes, many=True).data
